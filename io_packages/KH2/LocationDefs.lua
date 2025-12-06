@@ -408,17 +408,6 @@ function LocationDefs:DefineWorldEvents()
             {Name = "Kingdom Key Slot",                                                      Address = 0x1D27, BitIndex = 3},
             {Name = "Mages Staff Slot",                                                      Address = 0x1D27, BitIndex = 3},
             {Name = "Knight's Shield Slot",                                                  Address = 0x1D27, BitIndex = 3},
-            {Name = "Donald Starting Item 1",                                                Address = 0x1D27, BitIndex = 3},
-            {Name = "Donald Starting Item 2",                                                Address = 0x1D27, BitIndex = 3},
-            {Name = "Goofy Starting Item 1",                                                 Address = 0x1D27, BitIndex = 3},
-            {Name = "Goofy Starting Item 2",                                                 Address = 0x1D27, BitIndex = 3},
-            {Name = "Critical Starting Ability 1",                                           Address = 0x1D27, BitIndex = 3},
-            {Name = "Critical Starting Ability 2",                                           Address = 0x1D27, BitIndex = 3},
-            {Name = "Critical Starting Ability 3",                                           Address = 0x1D27, BitIndex = 3},
-            {Name = "Critical Starting Ability 4",                                           Address = 0x1D27, BitIndex = 3},
-            {Name = "Critical Starting Ability 5",                                           Address = 0x1D27, BitIndex = 3},
-            {Name = "Critical Starting Ability 6",                                           Address = 0x1D27, BitIndex = 3},
-            {Name = "Critical Starting Ability 7",                                           Address = 0x1D27, BitIndex = 3},
         },
 
         PL_Checks = {
