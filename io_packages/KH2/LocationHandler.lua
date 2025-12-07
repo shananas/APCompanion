@@ -56,8 +56,8 @@ function LocationHandler:CheckLevelLocations()
         CurrentFormLevel = ReadByte(Save + FormsLists[i][i].Address)
         if CurrentFormLevel > FormLevels[i].value then
             FormLevels[i].value = CurrentFormLevel
-            ConsolePrint(FormsLists[i][1].Name:match("^[^ ]+"))
-            SendToApClient(MessageTypes.LevelChecked, {FormLevels[i].value, FormsLists[i][1].Name:match("^[^ ]+")})
+            ConsolePrint(FormsLists[i][1].Name:match("^[^ ]+").."Level")
+            SendToApClient(MessageTypes.LevelChecked, {FormLevels[i].value, FormsLists[i][1].Name:match("^[^ ]+").."Level"})
         end
     end
 end
@@ -74,7 +74,7 @@ function LocationHandler:CheckWeaponAbilities()
         if not contained then
             if ReadByte(Save + WeaponAbilities[i].Address) > 0 then
                 table.insert(LocationsChecked, WeaponAbilities[i].Name)
-                SendToApClient(MessageTypes.Test, {WeaponAbilities[i].Address})
+                SendToApClient(MessageTypes.KeybladeChecked, {WeaponAbilities[i].Name})
             end
         end
         contained = false
@@ -90,7 +90,7 @@ function LocationHandler:CheckWeaponAbilities()
         if not contained and ReadByte(Save + 0x06B2) == 0 then
             if ReadByte(Save + FormWeaponAbilities[i].Address) & 0x1 << FormWeaponAbilities[i].BitIndex > 0 then
                 table.insert(LocationsChecked, FormWeaponAbilities[i].Name)
-                SendToApClient(MessageTypes.Test, {FormWeaponAbilities[i].Address})
+                SendToApClient(MessageTypes.KeybladeChecked, {FormWeaponAbilities[i].Name})
             end
         end
         contained = false

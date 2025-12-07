@@ -49,26 +49,28 @@ KHSCII = {
 }
 
 item_usefulness = {
-  trap = 0,
-  useless = 1,
-  normal = 2,
-  progression = 3,
-  special = 4
+	trap = 0,
+	useless = 1,
+	normal = 2,
+	progression = 3,
+	special = 4
 }
 
 MessageTypes = {
-  Invalid = -1,
-  Test = 0,
-  WorldLocationChecked = 1,
-  LevelChecked = 2,
-  ReceiveAllItems = 3,
-  RequestAllItems = 4,
-  ReceiveSingleItem = 5,
-  ClientCommand = 7,
-  Deathlink = 8,
-  PortalChecked = 9,
-  SendSlotData = 10,
-  Victory = 11
+	Invalid = -1,
+	Test = 0,
+	WorldLocationChecked = 1,
+	LevelChecked = 2,
+	KeybladeChecked = 3,
+	ClientCommand = 4,
+	Deathlink = 5,
+    SlotData = 6,
+    BountyList = 7,
+    ReceiveAllItems = 8,
+    RequestAllItems = 9,
+    ReceiveSingleItem = 10,
+    Victory = 11,
+	Closed = 20
 }
 
 --Items
@@ -114,6 +116,22 @@ CurrentLimitLevel = { value = 1}
 CurrentMasterLevel = { value = 1}
 CurrentFinalLevel = { value = 1}
 CurrentSummonLevel = { value = 1}
+FinalXemnasRequired = true
+FinalXemnasBeaten = false
+Goal = -1
+LuckyEmblemsRequired = 100
+BountyRequired = 100
+BountiesFinished = 0
+finished = false
+BountyBosses = {}
+FormSummonLevels = {
+	0x32F6,
+	0x332E,
+	0x3366,
+	0x339E,
+	0x33D6,
+	0x3526,
+}
 
 -- ############################################################
 -- ######################  Socket  ############################
@@ -121,14 +139,19 @@ CurrentSummonLevel = { value = 1}
 -- ############################################################
 
 function ConnectToApClient()
-	client = socket.connect("127.0.0.1", 13713)
-	if client then
-		ConsolePrint("Connected to client!")
+    local ok, err = client:connect("127.0.0.1", 13713)
+
+    if ok or err == "already connected" then
+        ConsolePrint("Connected to client!")
 		return true
-	else
-		ConsolePrint("Failed to connect")
-		return false
-	end
+    elseif err == "timeout" then
+        -- NON-BLOCKING: means connection is still in progress
+        return false
+    else
+        -- Any other error = failed
+        ConsolePrint("Failed to connect: " .. tostring(err))
+        return false
+    end
 end
 
 function SendToApClient(type,messages)
@@ -195,21 +218,37 @@ function HandleMessage(msg)
 	  local _deathTime = msg.values[1]
 	  ReceiveDeathlink(_deathTime)--]]
 
-	elseif msg.type == MessageTypes.SendSlotData then
-		local _slotType = tonumber(msg.values[1])
-		local _sentVals = {}
-		for i=2, #msg.values do
-			table.insert(_sentVals, tostring(msg.values[i]))
+	elseif msg.type == MessageTypes.SlotData then
+		if tostring(msg.values[1]) == "Final Xemnas" then
+			FinalXemnasRequired = (tonumber(msg.values[2]) == 1)
+		elseif tostring(msg.values[1]) == "Goal" then
+			Goal = tonumber(msg.values[2])
+		elseif tostring(msg.values[1]) == "LuckyEmblemsRequired" then
+			LuckyEmblemsRequired = tonumber(msg.values[2])
+		elseif tostring(msg.values[1]) == "BountyRequired" then
+			BountyRequired = tonumber(msg.values[2])
 		end
 
-		ConfigTask:ParseSlotData(_slotType, _sentVals)
+	elseif msg.type == MessageTypes.BountyList then
+		local finalmsg = msg.values[1]:sub(2,-2)
+		local parsed = {}
+		for num in finalmsg:gmatch("%d+") do
+			table.insert(parsed, tonumber(num))
+		end
+		table.insert(BountyBosses, parsed)
 	end
 end
 
+local receiveBuffer = ""
+
 function ReceiveFromApClient()
 	if SocketHasMessages() then
-		local message, err = client:receive('*l')
+		local message, err, partial = client:receive('*l')
 		if message then
+			if receiveBuffer ~= "" then
+				message = receiveBuffer .. message
+				receiveBuffer = ""
+			end
 			ConsolePrint("Full message received: "..message)
 			local parts = SplitString(message, ";")
 			local type = tonumber(parts[1])
@@ -222,13 +261,26 @@ function ReceiveFromApClient()
 				table.insert(newMessage.values, parts[i])
 			end
 
-			return newMessage
-		elseif err then
-			ConsolePrint("Error receiving message: " .. err)
-		if err == "closed" then
-			connectionInitialized = false
+			if newMessage.type == MessageTypes.Closed then
+				ConsolePrint("Server closed resetting client")
+				connectionInitialized = false
 				gameStarted = false
-		end
+				client:close()
+				return
+			end
+			if newMessage.type == MessageTypes.Test	 then
+				return
+			end
+			return newMessage
+		elseif partial and #partial > 0 then
+			receiveBuffer = receiveBuffer .. partial
+			ConsolePrint("partial")
+		elseif err  and err ~= "timeout" then
+			ConsolePrint("Error receiving message: " .. err)
+			if err == "closed" then
+				connectionInitialized = false
+				gameStarted = false
+			end
 		end
 	else
 		return nil
@@ -397,31 +449,114 @@ function APCommunication()
 	LocationHandler:CheckLevelLocations()
 	LocationHandler:CheckWeaponAbilities()
 	LocationHandler:CheckWorldLocations()
-
-	local msg = ReceiveFromApClient()
-	if msg then
-		HandleMessage(msg)
+	if not finished then
+		GoalGame()
 	end
+
+	while true do
+        local msg = ReceiveFromApClient()
+        if not msg then break end
+        HandleMessage(msg)
+    end
 end
 
-function OnGameStart()
-	local connected =  ConnectToApClient()
-
-	if connected then
-		connectionInitialized = true
-		gameStarted = true
+function CheckBountiesObtained()
+	BountiesFinished = 0
+	for i = 1, #BountyBosses do
+		for j = 1, #FormSummonLevels do
+			if BountyBosses[i][1] == FormSummonLevels[j] then
+				if ReadByte(Save + BountyBosses[i][1]) >= 7 then
+					BountiesFinished = BountiesFinished + 1
+					break
+				end
+			end
+		end
+		if ReadByte(Save + BountyBosses[i][1]) & 0x1 << BountyBosses[i][2] > 0 then
+			BountiesFinished = BountiesFinished + 1
+		end
 	end
 end
 
 function GoalGame()
-  SendToApClient(MessageTypes.Victory, {"Game Completed"})
+    if FinalXemnasRequired then
+        if not FinalXemnasBeaten and ReadByte(Save + Worlds.TWTNW_Checks[37].Address) & 0x1 << Worlds.TWTNW_Checks[37].BitIndex > 0 then
+            FinalXemnasBeaten = true
+		end
+	end
+    -- three proofs
+    if Goal == 0 then
+        if ReadByte(Save + 0x36B2) > 0 and ReadByte(Save + 0x36B3) > 0 and ReadByte(Save + 0x36B4) > 0 then
+            if FinalXemnasRequired then
+                if FinalXemnasBeaten then
+					SendToApClient(MessageTypes.Victory, {"Game Completed"})
+					finished = true
+				end
+			else
+				SendToApClient(MessageTypes.Victory, {"Game Completed"})
+				finished = true
+			end
+		end
+    elseif Goal == 1 then
+        if ReadByte(Save + 0x3641) >= LuckyEmblemsRequired then
+            if ReadByte(Save + 0x36B3) < 1 then
+                WriteByte(Save + 0x36B2, 1)
+                WriteByte(Save + 0x36B3, 1)
+                WriteByte(Save + 0x36B4, 1)
+			end
+            if FinalXemnasRequired then
+                if FinalXemnasBeaten then
+					SendToApClient(MessageTypes.Victory, {"Game Completed"})
+					finished = true
+				end
+			else
+				SendToApClient(MessageTypes.Victory, {"Game Completed"})
+				finished = true
+			end
+		end
+    elseif Goal == 2 then
+		CheckBountiesObtained()
+        if BountiesFinished > BountyRequired then
+            if ReadByte(Save + 0x36B3) < 1 then
+                WriteByte(Save + 0x36B2, 1)
+                WriteByte(Save + 0x36B3, 1)
+                WriteByte(Save + 0x36B4, 1)
+			end
+            if FinalXemnasRequired then
+                if FinalXemnasBeaten then
+					SendToApClient(MessageTypes.Victory, {"Game Completed"})
+					finished = true
+                end
+			else
+				SendToApClient(MessageTypes.Victory, {"Game Completed"})
+				finished = true
+			end
+		end
+    elseif Goal == 3 then
+		CheckBountiesObtained()
+        if BountiesFinished > BountyRequired and ReadByte(Save + 0x3641) >= LuckyEmblemsRequired then
+            if ReadByte(Save + 0x36B3) < 1 then
+                WriteByte(Save + 0x36B2, 1)
+                WriteByte(Save + 0x36B3, 1)
+                WriteByte(Save + 0x36B4, 1)
+			end
+            if FinalXemnasRequired then
+                if FinalXemnasBeaten then
+					SendToApClient(MessageTypes.Victory, {"Game Completed"})
+					finished = true
+                end
+			else
+				SendToApClient(MessageTypes.Victory, {"Game Completed"})
+				finished = true
+			end
+        end
+	end
 end
 
 function CurrentWorldLocation()
     CurrentWorld = ReadByte(Now)
 	if LastWorld ~= CurrentWorld then
 		LastWorld = CurrentWorld
-		SendToApClient(10, {CurrentWorld})
+		SendToApClient(MessageTypes.SlotData, {CurrentWorld})
 	end
 end
 
@@ -436,14 +571,15 @@ function _OnInit()
 	ItemDefs:DefineAbilities()
 	GameVersion = 0
 	print('Lua Socket test')
+	client = socket.tcp()
+	client:settimeout(0)
 end
 
 function _OnFrame()
-if GameVersion == 0 then --Get anchor addresses
-	GetVersion()
-	return
-end
-if true then --Define current values for common addresses
+	if GameVersion == 0 then --Get anchor addresses
+		GetVersion()
+		return
+	end
 	World  = ReadByte(Now+0x00)
 	Room   = ReadByte(Now+0x01)
 	Place  = ReadShort(Now+0x00)
@@ -453,8 +589,7 @@ if true then --Define current values for common addresses
 	Evt    = ReadShort(Now+0x08)
 	PrevPlace = ReadShort(Now+0x30)
 	ARD = ReadLong(ARDPointer)
-end
-	frameCount = (frameCount+1)%30
+	frameCount = (frameCount + 1) % 15
 	if not gameStarted and frameCount == 0 then
 		local connected =  ConnectToApClient()
 
@@ -465,7 +600,7 @@ end
 		return
 	end
 
-	if frameCount == 0 and canExecute then --Dont run main logic every frame
+	if frameCount == 0 and ReadByte(Save + 0x1D27) & 0x1 << 3 > 0 then --Dont run main logic every frame
 		APCommunication()
 	end
 end
@@ -520,7 +655,6 @@ if GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
         isDead = 0x0BEEF28
         FadeStatus = 0xABAF38
         PlayerGaugePointer = 0x0ABCCC8
-		canExecute = true
 	elseif ReadString(0x9A98B0,4) == 'KH2J' then --Steam Global
 		GameVersion = 3
 		print('GoA Steam Global Version')
@@ -568,7 +702,6 @@ if GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
         isDead = 0x0BEF4A8
         FadeStatus = 0xABB4B8
         PlayerGaugePointer = 0x0ABD248
-		canExecute = true
 	elseif ReadString(0x9A98B0,4) == 'KH2J' then --Steam JP (same as Global for now)
 		GameVersion = 4
 		print('GoA Steam JP Version')
@@ -616,7 +749,6 @@ if GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
         isDead = 0x0BEF4A8
         FadeStatus = 0xABB4B8
         PlayerGaugePointer = 0x0ABD248
-		canExecute = true
 	elseif ReadString(0x9A7070,4) == "KH2J" or ReadString(0x9A70B0,4) == "KH2J" or ReadString(0x9A92F0,4) == "KH2J" then
 		GameVersion = -1
 		print("Epic Version is outdated. Please update the game.")

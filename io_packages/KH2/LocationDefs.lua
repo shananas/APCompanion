@@ -589,52 +589,52 @@ end
 function LocationDefs:FormLevels()
 
     ValorForm ={
-        {Name = "Valor lvl 2", Address = 0x32F6, BitIndex = 2},
-        {Name = "Valor lvl 3", Address = 0x32F6, BitIndex = 3},
-        {Name = "Valor lvl 4", Address = 0x32F6, BitIndex = 4},
-        {Name = "Valor lvl 5", Address = 0x32F6, BitIndex = 5},
-        {Name = "Valor lvl 6", Address = 0x32F6, BitIndex = 6},
-        {Name = "Valor lvl 7", Address = 0x32F6, BitIndex = 7},
+        {Name = "Valor level 2", Address = 0x32F6, BitIndex = 2},
+        {Name = "Valor level 3", Address = 0x32F6, BitIndex = 3},
+        {Name = "Valor level 4", Address = 0x32F6, BitIndex = 4},
+        {Name = "Valor level 5", Address = 0x32F6, BitIndex = 5},
+        {Name = "Valor level 6", Address = 0x32F6, BitIndex = 6},
+        {Name = "Valor level 7", Address = 0x32F6, BitIndex = 7},
     }
     WisdomForm = {
-        {Name = "Wisdom lvl 2", Address = 0x332E, BitIndex = 2},
-        {Name = "Wisdom lvl 3", Address = 0x332E, BitIndex = 3},
-        {Name = "Wisdom lvl 4", Address = 0x332E, BitIndex = 4},
-        {Name = "Wisdom lvl 5", Address = 0x332E, BitIndex = 5},
-        {Name = "Wisdom lvl 6", Address = 0x332E, BitIndex = 6},
-        {Name = "Wisdom lvl 7", Address = 0x332E, BitIndex = 7},
+        {Name = "Wisdom level 2", Address = 0x332E, BitIndex = 2},
+        {Name = "Wisdom level 3", Address = 0x332E, BitIndex = 3},
+        {Name = "Wisdom level 4", Address = 0x332E, BitIndex = 4},
+        {Name = "Wisdom level 5", Address = 0x332E, BitIndex = 5},
+        {Name = "Wisdom level 6", Address = 0x332E, BitIndex = 6},
+        {Name = "Wisdom level 7", Address = 0x332E, BitIndex = 7},
     }
     LimitForm = {
-        {Name = "Limit lvl 2", Address = 0x3366, BitIndex = 2},
-        {Name = "Limit lvl 3", Address = 0x3366, BitIndex = 3},
-        {Name = "Limit lvl 4", Address = 0x3366, BitIndex = 4},
-        {Name = "Limit lvl 5", Address = 0x3366, BitIndex = 5},
-        {Name = "Limit lvl 6", Address = 0x3366, BitIndex = 6},
-        {Name = "Limit lvl 7", Address = 0x3366, BitIndex = 7},
+        {Name = "Limit level 2", Address = 0x3366, BitIndex = 2},
+        {Name = "Limit level 3", Address = 0x3366, BitIndex = 3},
+        {Name = "Limit level 4", Address = 0x3366, BitIndex = 4},
+        {Name = "Limit level 5", Address = 0x3366, BitIndex = 5},
+        {Name = "Limit level 6", Address = 0x3366, BitIndex = 6},
+        {Name = "Limit level 7", Address = 0x3366, BitIndex = 7},
     }
     MasterForm = {
-        {Name = "Master lvl 2", Address = 0x339E, BitIndex = 2},
-        {Name = "Master lvl 3", Address = 0x339E, BitIndex = 3},
-        {Name = "Master lvl 4", Address = 0x339E, BitIndex = 4},
-        {Name = "Master lvl 5", Address = 0x339E, BitIndex = 5},
-        {Name = "Master lvl 6", Address = 0x339E, BitIndex = 6},
-        {Name = "Master lvl 7", Address = 0x339E, BitIndex = 7},
+        {Name = "Master level 2", Address = 0x339E, BitIndex = 2},
+        {Name = "Master level 3", Address = 0x339E, BitIndex = 3},
+        {Name = "Master level 4", Address = 0x339E, BitIndex = 4},
+        {Name = "Master level 5", Address = 0x339E, BitIndex = 5},
+        {Name = "Master level 6", Address = 0x339E, BitIndex = 6},
+        {Name = "Master level 7", Address = 0x339E, BitIndex = 7},
     }
     FinalForm = {
-        {Name = "Final lvl 2", Address = 0x33D6, BitIndex = 2},
-        {Name = "Final lvl 3", Address = 0x33D6, BitIndex = 3},
-        {Name = "Final lvl 4", Address = 0x33D6, BitIndex = 4},
-        {Name = "Final lvl 5", Address = 0x33D6, BitIndex = 5},
-        {Name = "Final lvl 6", Address = 0x33D6, BitIndex = 6},
-        {Name = "Final lvl 7", Address = 0x33D6, BitIndex = 7},
+        {Name = "Final level 2", Address = 0x33D6, BitIndex = 2},
+        {Name = "Final level 3", Address = 0x33D6, BitIndex = 3},
+        {Name = "Final level 4", Address = 0x33D6, BitIndex = 4},
+        {Name = "Final level 5", Address = 0x33D6, BitIndex = 5},
+        {Name = "Final level 6", Address = 0x33D6, BitIndex = 6},
+        {Name = "Final level 7", Address = 0x33D6, BitIndex = 7},
     }
     SummonLevels = {
-        {Name = "Summon lvl 2", Address = 0x3526, BitIndex = 2},
-        {Name = "Summon lvl 3", Address = 0x3526, BitIndex = 3},
-        {Name = "Summon lvl 4", Address = 0x3526, BitIndex = 4},
-        {Name = "Summon lvl 5", Address = 0x3526, BitIndex = 5},
-        {Name = "Summon lvl 6", Address = 0x3526, BitIndex = 6},
-        {Name = "Summon lvl 7", Address = 0x3526, BitIndex = 7},
+        {Name = "Summon level 2", Address = 0x3526, BitIndex = 2},
+        {Name = "Summon level 3", Address = 0x3526, BitIndex = 3},
+        {Name = "Summon level 4", Address = 0x3526, BitIndex = 4},
+        {Name = "Summon level 5", Address = 0x3526, BitIndex = 5},
+        {Name = "Summon level 6", Address = 0x3526, BitIndex = 6},
+        {Name = "Summon level 7", Address = 0x3526, BitIndex = 7},
     }
 end
 
