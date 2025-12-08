@@ -33,6 +33,10 @@ function LocationHandler:CheckWorldLocations()
             end
             if not contained and ReadByte(Save + checks[i].Address) & 0x1 << checks[i].BitIndex > 0 then
                 table.insert(LocationsChecked, checks[i].Name)
+                if checks[i].Chest then
+                    --RoomSaveTask:StoreItem(checks[i])
+                    ConsolePrint(tostring(checks[i]))
+                end
                 SendToApClient(MessageTypes.WorldLocationChecked, {checks[i].Name})
             end
         end
@@ -46,18 +50,21 @@ end
 
 function LocationHandler:CheckLevelLocations()
     CurrentLevel = ReadByte(Save + 0x24FF)
-    if CurrentLevel > CurrentSoraLevel then
-        CurrentSoraLevel = CurrentLevel
+    if CurrentLevel > MaxSoraLevel.value then
+        MaxSoraLevel.value = CurrentLevel
         SendToApClient(MessageTypes.LevelChecked, {CurrentLevel, "Sora"})
+    elseif MaxSoraLevel.value > CurrentLevel then
+        WriteByte(Save + 0x24FF, MaxSoraLevel.value)
     end
     FormsLists = {ValorForm , WisdomForm, LimitForm, MasterForm, FinalForm, SummonLevels}
-    FormLevels = {CurrentValorLevel, CurrentWisdomLevel, CurrentLimitLevel, CurrentMasterLevel, CurrentFinalLevel, CurrentSummonLevel}
+    FormLevels = {MaxValorLevel, MaxWisdomLevel, MaxLimitLevel, MaxMasterLevel, MaxFinalLevel, MaxSummonLevel}
     for i = 1, 6 do
         CurrentFormLevel = ReadByte(Save + FormsLists[i][i].Address)
         if CurrentFormLevel > FormLevels[i].value then
             FormLevels[i].value = CurrentFormLevel
-            ConsolePrint(FormsLists[i][1].Name:match("^[^ ]+").."Level")
             SendToApClient(MessageTypes.LevelChecked, {FormLevels[i].value, FormsLists[i][1].Name:match("^[^ ]+").."Level"})
+        elseif FormLevels[i].value > CurrentFormLevel then
+            WriteByte(Save + FormsLists[i][i].Address, FormLevels[i].value)
         end
     end
 end

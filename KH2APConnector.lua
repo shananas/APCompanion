@@ -10,10 +10,10 @@ ItemHandler = require("KH2.ItemHandler")
 local ItemDefs = require("KH2.ItemDefs")
 local LocationDefs = require("KH2.LocationDefs")
 local LocationHandler = require("KH2.LocationHandler")
+local RoomSaveTask = require("KH2.RoomSaveTask")
 --[[local PromptTask = require("KHDDD.Tasks.PromptTask")
 local CheatTask = require("KHDDD.Tasks.CheatTask")
 local ConfigTask = require("KHDDD.Tasks.ConfigTask")
-local RoomSaveTask = require("KHDDD.Tasks.RoomSaveTask")
 local SoftlockTask = require("KHDDD.Tasks.SoftlockTask")--]]
 
 LUAGUI_NAME = "KH2 AP Connector [Socket]"
@@ -109,13 +109,13 @@ CurrentWorld = -1
 
 LocationsChecked = {}
 
-CurrentSoraLevel = 1
-CurrentValorLevel = { value = 1}
-CurrentWisdomLevel = { value = 1}
-CurrentLimitLevel = { value = 1}
-CurrentMasterLevel = { value = 1}
-CurrentFinalLevel = { value = 1}
-CurrentSummonLevel = { value = 1}
+MaxSoraLevel = { value = 1}
+MaxValorLevel = { value = 1}
+MaxWisdomLevel = { value = 1}
+MaxLimitLevel = { value = 1}
+MaxMasterLevel = { value = 1}
+MaxFinalLevel = { value = 1}
+MaxSummonLevel = { value = 1}
 FinalXemnasRequired = true
 FinalXemnasBeaten = false
 Goal = -1
@@ -440,43 +440,6 @@ function updateReceived(itemCnt)
 	ConsolePrint("Last Received Index: "..tostring(lastReceivedIndex))
 end
 
--- ############################################################
--- ######################  Game Setup  ########################
--- ############################################################
-
-function APCommunication()
-	CurrentWorldLocation()
-	LocationHandler:CheckLevelLocations()
-	LocationHandler:CheckWeaponAbilities()
-	LocationHandler:CheckWorldLocations()
-	if not finished then
-		GoalGame()
-	end
-
-	while true do
-        local msg = ReceiveFromApClient()
-        if not msg then break end
-        HandleMessage(msg)
-    end
-end
-
-function CheckBountiesObtained()
-	BountiesFinished = 0
-	for i = 1, #BountyBosses do
-		for j = 1, #FormSummonLevels do
-			if BountyBosses[i][1] == FormSummonLevels[j] then
-				if ReadByte(Save + BountyBosses[i][1]) >= 7 then
-					BountiesFinished = BountiesFinished + 1
-					break
-				end
-			end
-		end
-		if ReadByte(Save + BountyBosses[i][1]) & 0x1 << BountyBosses[i][2] > 0 then
-			BountiesFinished = BountiesFinished + 1
-		end
-	end
-end
-
 function GoalGame()
     if FinalXemnasRequired then
         if not FinalXemnasBeaten and ReadByte(Save + Worlds.TWTNW_Checks[37].Address) & 0x1 << Worlds.TWTNW_Checks[37].BitIndex > 0 then
@@ -552,12 +515,57 @@ function GoalGame()
 	end
 end
 
+function CheckBountiesObtained()
+	BountiesFinished = 0
+	for i = 1, #BountyBosses do
+		for j = 1, #FormSummonLevels do
+			if BountyBosses[i][1] == FormSummonLevels[j] then
+				if ReadByte(Save + BountyBosses[i][1]) >= 7 then
+					BountiesFinished = BountiesFinished + 1
+					break
+				end
+			end
+		end
+		if ReadByte(Save + BountyBosses[i][1]) & 0x1 << BountyBosses[i][2] > 0 then
+			BountiesFinished = BountiesFinished + 1
+		end
+	end
+end
+
 function CurrentWorldLocation()
     CurrentWorld = ReadByte(Now)
 	if LastWorld ~= CurrentWorld then
 		LastWorld = CurrentWorld
 		SendToApClient(MessageTypes.SlotData, {CurrentWorld})
 	end
+end
+
+----This function is needed for room save to work
+--function sendToInv(itemId)
+--  local _item = getItemById(itemId)
+--  if _item.Ability ~= nil then --Ability redeemed
+--    ItemHandler:ReceiveAbility(itemId)
+--  end
+--end
+
+-- ############################################################
+-- ######################  Game Setup  ########################
+-- ############################################################
+
+function APCommunication()
+	CurrentWorldLocation()
+	LocationHandler:CheckLevelLocations()
+	LocationHandler:CheckWeaponAbilities()
+	LocationHandler:CheckWorldLocations()
+	if not finished then
+		GoalGame()
+	end
+
+	while true do
+        local msg = ReceiveFromApClient()
+        if not msg then break end
+        HandleMessage(msg)
+    end
 end
 
 function _OnInit()
@@ -569,6 +577,7 @@ function _OnInit()
 	LocationDefs:TornPageLocks()
 	ItemDefs:DefineItems()
 	ItemDefs:DefineAbilities()
+	RoomSaveTask:Init() --Initialize room saves
 	GameVersion = 0
 	print('Lua Socket test')
 	client = socket.tcp()
