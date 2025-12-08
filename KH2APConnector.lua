@@ -132,6 +132,8 @@ FormSummonLevels = {
 	0x33D6,
 	0x3526,
 }
+DeathlinkEnabled = false
+RecievedDeath = false
 
 -- ############################################################
 -- ######################  Socket  ############################
@@ -149,7 +151,7 @@ function ConnectToApClient()
         return false
     else
         -- Any other error = failed
-        ConsolePrint("Failed to connect: " .. tostring(err))
+        --ConsolePrint("Failed to connect: " .. tostring(err))
         return false
     end
 end
@@ -205,18 +207,19 @@ function HandleMessage(msg)
 				return
 			end
 		ItemHandler:Receive(_item)
+		RoomSaveTask:StoreItem(_item)
 		end
 	elseif msg.type == MessageTypes.ReceiveSingleItem then
 		ConsolePrint("Receiving single item")
 		local _item = getItemById(tonumber(msg.values[1]))
 		ItemHandler:Receive(_item)
+		RoomSaveTask:StoreItem(_item)
 
 	elseif msg.type == MessageTypes.ClientCommand then
 		local _cmdId = tonumber(msg.values[1])
 
-	--[[elseif msg.type == MessageTypes.Deathlink then
-	  local _deathTime = msg.values[1]
-	  ReceiveDeathlink(_deathTime)--]]
+	elseif msg.type == MessageTypes.Deathlink then
+		RecievedDeath = true
 
 	elseif msg.type == MessageTypes.SlotData then
 		if tostring(msg.values[1]) == "Final Xemnas" then
@@ -266,9 +269,6 @@ function ReceiveFromApClient()
 				connectionInitialized = false
 				gameStarted = false
 				client:close()
-				return
-			end
-			if newMessage.type == MessageTypes.Test	 then
 				return
 			end
 			return newMessage
@@ -540,13 +540,36 @@ function CurrentWorldLocation()
 	end
 end
 
+function Deathlink()
+	local KillSora = false
+	local IsDead = ReadLong(IsDeadAddress)
+	--if deathlink from another player
+	if RecievedDeath then
+		-- if drive gauge >= 5 and not in atlantica
+		if ReadByte(Slot1+0x1B2)>=5 and World ~= 11 then
+			--if safe to kill sora
+			if World~=6 or Room~=0 then
+				WriteByte(Slot1,0)
+			end
+		end
+	end
+	-- if the script says kill sora and we are safe to do so kill him
+	if(IsDead~=0) then
+		HasDied = true
+	end
+	if(HasDied and IsDead==0)then
+		HasDied = false
+		if(not RecievedDeath) then
+			SendToApClient(MessageTypes.Deathlink,{Room, Evt, World})
+		end
+		RecievedDeath = false
+	end
+end
+
 ----This function is needed for room save to work
---function sendToInv(itemId)
---  local _item = getItemById(itemId)
---  if _item.Ability ~= nil then --Ability redeemed
---    ItemHandler:ReceiveAbility(itemId)
---  end
---end
+function sendToInv(item)
+    ItemHandler:Receive(item)
+end
 
 -- ############################################################
 -- ######################  Game Setup  ########################
@@ -577,7 +600,6 @@ function _OnInit()
 	LocationDefs:TornPageLocks()
 	ItemDefs:DefineItems()
 	ItemDefs:DefineAbilities()
-	RoomSaveTask:Init() --Initialize room saves
 	GameVersion = 0
 	print('Lua Socket test')
 	client = socket.tcp()
@@ -589,15 +611,17 @@ function _OnFrame()
 		GetVersion()
 		return
 	end
-	World  = ReadByte(Now+0x00)
-	Room   = ReadByte(Now+0x01)
-	Place  = ReadShort(Now+0x00)
-	Door   = ReadShort(Now+0x02)
-	Map    = ReadShort(Now+0x04)
-	Btl    = ReadShort(Now+0x06)
-	Evt    = ReadShort(Now+0x08)
-	PrevPlace = ReadShort(Now+0x30)
-	ARD = ReadLong(ARDPointer)
+	if true then
+		World  = ReadByte(Now+0x00)
+		Room   = ReadByte(Now+0x01)
+		Place  = ReadShort(Now+0x00)
+		Door   = ReadShort(Now+0x02)
+		Map    = ReadShort(Now+0x04)
+		Btl    = ReadShort(Now+0x06)
+		Evt    = ReadShort(Now+0x08)
+		PrevPlace = ReadShort(Now+0x30)
+		ARD = ReadLong(ARDPointer)
+	end
 	frameCount = (frameCount + 1) % 15
 	if not gameStarted and frameCount == 0 then
 		local connected =  ConnectToApClient()
@@ -608,7 +632,8 @@ function _OnFrame()
 		end
 		return
 	end
-
+	RoomSaveTask:GetRoomChange()
+	Deathlink()
 	if frameCount == 0 and ReadByte(Save + 0x1D27) & 0x1 << 3 > 0 then --Dont run main logic every frame
 		APCommunication()
 	end
@@ -616,7 +641,6 @@ end
 
 function GetVersion() --Define anchor addresses
 if GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
-	OnPC = true
 	if ReadString(0x9A9330,4) == 'KH2J' then --EGS
 		GameVersion = 2
 		print('GoA Epic Version')
@@ -661,9 +685,9 @@ if GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
         Journal = 0x743260
         Shop = 0x743350
         InfoBarPointer = 0xABE2A8
-        isDead = 0x0BEEF28
         FadeStatus = 0xABAF38
         PlayerGaugePointer = 0x0ABCCC8
+		HasDied = false
 	elseif ReadString(0x9A98B0,4) == 'KH2J' then --Steam Global
 		GameVersion = 3
 		print('GoA Steam Global Version')
@@ -708,9 +732,9 @@ if GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
         Journal = 0x7434E0
         Shop =  0x7435D0
         InfoBarPointer = 0xABE828
-        isDead = 0x0BEF4A8
         FadeStatus = 0xABB4B8
         PlayerGaugePointer = 0x0ABD248
+		HasDied = false
 	elseif ReadString(0x9A98B0,4) == 'KH2J' then --Steam JP (same as Global for now)
 		GameVersion = 4
 		print('GoA Steam JP Version')
@@ -755,9 +779,9 @@ if GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
         Journal = 0x7434E0
         Shop =  0x7435D0
         InfoBarPointer = 0xABE828
-        isDead = 0x0BEF4A8
         FadeStatus = 0xABB4B8
         PlayerGaugePointer = 0x0ABD248
+		HasDied = false
 	elseif ReadString(0x9A7070,4) == "KH2J" or ReadString(0x9A70B0,4) == "KH2J" or ReadString(0x9A92F0,4) == "KH2J" then
 		GameVersion = -1
 		print("Epic Version is outdated. Please update the game.")
@@ -787,5 +811,6 @@ if GameVersion ~= 0 then
 	Gauge3 = Gauge2 + NxtGauge--]]
 	Menu2  = Menu1 + NextMenu
 	--Menu3  = Menu2 + NextMenu
+	RoomSaveTask:Init() --Initialize room saves
 end
 end

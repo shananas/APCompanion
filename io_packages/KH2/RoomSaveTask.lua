@@ -1,57 +1,51 @@
 --Refunds certain items if the player dies while in a room
 
 local RoomSaveTask = {}
-
+local HasDied = false
 RoomSaveTask.State = {
-	Room = 0x00,
-	Evt = 0x00,
+	SveRoom = 0x00,
+	CurrentRoom = 0x00,
 	ItemIds = {}
 }
 
-RoomSaveTask.ValidTypes = {"Command", "Recipe", "Consumable", "Support", "Spirit", "World"}
-RoomSaveTask.PrepareLoad = false
-
 function RoomSaveTask:Init()
-	self.State.Room = ReadByte(Room)
-	self.State.Evt = ReadByte(Evt)
+	self.State.SveRoom = ReadByte(Sve + 0x01)
+	self.State.CurrentRoom = Room
 end
 
 function RoomSaveTask:GetRoomChange() --Determine if the room has changed
-	local _currRoom = ReadByte(Room)
-	local _currEvt = ReadByte(Evt)
-	if self.State.Room ~= _currRoom or self.State.Evt ~= _currEvt then
-		ConsolePrint("Room changed")
-		self:OnRoomChange()
-		self.State.Room = _currRoom
-		self.State.Evt = _currEvt
+	local currRoom = Room
+	local currSve = ReadByte(Sve + 0x01)
+	if ReadLong(isDead) ~= 0 then
+		HasDied = true
+	end
+
+	if self.State.SveRoom ~= currSve then
+		if #self.State.ItemIds > 0 then
+			ConsolePrint("Room changed")
+			self.State.CurrentRoom = currRoom
+			self.State.SveRoom = currSve
+			self:OnRoomChange()
+		else
+			self.State.SveRoom = currSve
+		end
+	elseif HasDied and ReadByte(Pause) == 0 and ReadLong(ReadLong(PlayerGaugePointer)+0x88, true) ~= 0 and #self.State.ItemIds > 0 then
+		ConsolePrint("Restoring items lost on death...")
+		self:RestoreItems()
+		self.State.CurrentRoom = currRoom
+		HasDied = false
+	elseif self.State.CurrentRoom ~= currRoom then
+		self.State.CurrentRoom = currRoom
+		HasDied = false
 	end
 end
 
 function RoomSaveTask:OnRoomChange()
-	if self.PrepareLoad then --Redeem items before clearing the list to be safe
-		self:RestoreItems()
-		self.PrepareLoad = false
-	end
 	self.State.ItemIds = {} --Vanilla room save occurred; clear list
 end
 
 function RoomSaveTask:StoreItem(id) --Store items to prepare for potential room save
 		table.insert(self.State.ItemIds, id)
-end
-
-function RoomSaveTask:CheckPlayerState() --See if player has died
-	local _ptr = GetPointer(MemoryAddresses.deathPtr, MemoryAddresses.deathOffset)
-	if not self.PrepareLoad then
-		if ReadByte(_ptr, true) == 3 then --Player died
-			ConsolePrint("Player died; preparing load from room save")
-			self.PrepareLoad = true
-		end
-	else
-		if ReadByte(_ptr, true) == 0x01 or ReadByte(_ptr, true) == 0x02 then --Player respawned
-			self:RestoreItems()
-			self.PrepareLoad = false
-		end
-	end
 end
 
 function RoomSaveTask:RestoreItems() --Put items likely lost to death back into inventory
