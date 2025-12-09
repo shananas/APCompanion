@@ -35,7 +35,6 @@ function LocationHandler:CheckWorldLocations()
                 table.insert(LocationsChecked, checks[i].Name)
                 if checks[i].Chest then
                     --RoomSaveTask:StoreItem(checks[i])
-                    ConsolePrint(tostring(checks[i]))
                 end
                 SendToApClient(MessageTypes.WorldLocationChecked, {checks[i].Name})
             end

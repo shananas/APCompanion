@@ -269,6 +269,8 @@ function ReceiveFromApClient()
 				connectionInitialized = false
 				gameStarted = false
 				client:close()
+				client = socket.tcp()
+				client:settimeout(0)
 				return
 			end
 			return newMessage
@@ -622,7 +624,7 @@ function _OnFrame()
 		PrevPlace = ReadShort(Now+0x30)
 		ARD = ReadLong(ARDPointer)
 	end
-	frameCount = (frameCount + 1) % 15
+	frameCount = (frameCount + 1) % 30
 	if not gameStarted and frameCount == 0 then
 		local connected =  ConnectToApClient()
 
