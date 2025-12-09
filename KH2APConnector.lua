@@ -197,8 +197,7 @@ function HandleMessage(msg)
 	if msg.type == MessageTypes.ReceiveAllItems then
 		ConsolePrint("Receiving all items")
 		ItemHandler:Reset()
-		local i = 1;
-		while i <= #msg.values-1 do
+		for i = 1, #msg.values do
 			local _msg = msg.values[i]
 			ConsolePrint("Msg Value: ".._msg)
 			local _item = getItemById(tonumber(_msg))
@@ -219,7 +218,12 @@ function HandleMessage(msg)
 		local _cmdId = tonumber(msg.values[1])
 
 	elseif msg.type == MessageTypes.Deathlink then
-		RecievedDeath = true
+		if msg.values[1] ~= nil then
+			DeathlinkEnabled = ("true" == msg.values[1])
+			ConsolePrint(tostring(DeathlinkEnabled))
+		else
+			RecievedDeath = true
+		end
 
 	elseif msg.type == MessageTypes.SlotData then
 		if tostring(msg.values[1]) == "Final Xemnas" then
@@ -631,11 +635,14 @@ function _OnFrame()
 		if connected then
 			connectionInitialized = true
 			gameStarted = true
+			--SendToApClient(MessageTypes.RequestAllItems, {"Requesting Items"})
 		end
 		return
 	end
 	RoomSaveTask:GetRoomChange()
-	Deathlink()
+	if DeathlinkEnabled then
+		Deathlink()
+	end
 	if frameCount == 0 and ReadByte(Save + 0x1D27) & 0x1 << 3 > 0 then --Dont run main logic every frame
 		APCommunication()
 	end
