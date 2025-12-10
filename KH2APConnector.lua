@@ -110,13 +110,13 @@ CurrentWorld = -1
 
 LocationsChecked = {}
 
-MaxSoraLevel = { value = 1}
-MaxValorLevel = { value = 1}
-MaxWisdomLevel = { value = 1}
-MaxLimitLevel = { value = 1}
-MaxMasterLevel = { value = 1}
-MaxFinalLevel = { value = 1}
-MaxSummonLevel = { value = 1}
+MaxSoraLevel = { value = 1 }
+MaxValorLevel = { value = 1 }
+MaxWisdomLevel = { value = 1 }
+MaxLimitLevel = { value = 1 }
+MaxMasterLevel = { value = 1 }
+MaxFinalLevel = { value = 1 }
+MaxSummonLevel = { value = 1 }
 FinalXemnasRequired = true
 FinalXemnasBeaten = false
 Goal = -1
