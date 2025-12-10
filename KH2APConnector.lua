@@ -70,6 +70,7 @@ MessageTypes = {
     RequestAllItems = 9,
     ReceiveSingleItem = 10,
     Victory = 11,
+	Handshake  = 12,
 	Closed = 20
 }
 
@@ -219,7 +220,7 @@ function HandleMessage(msg)
 
 	elseif msg.type == MessageTypes.Deathlink then
 		if msg.values[1] ~= nil then
-			DeathlinkEnabled = ("true" == msg.values[1])
+			DeathlinkEnabled = ("True" == msg.values[1])
 			ConsolePrint(tostring(DeathlinkEnabled))
 		else
 			RecievedDeath = true
@@ -243,6 +244,12 @@ function HandleMessage(msg)
 			table.insert(parsed, tonumber(num))
 		end
 		table.insert(BountyBosses, parsed)
+
+	elseif msg.type == MessageTypes.Handshake then
+		if msg.values[1] == "True" then
+			ConsolePrint("Received handshake; Requesting items")
+			SendToApClient(MessageTypes.RequestAllItems, {"Requesting Items"})
+		end
 	end
 end
 
@@ -635,7 +642,7 @@ function _OnFrame()
 		if connected then
 			connectionInitialized = true
 			gameStarted = true
-			--SendToApClient(MessageTypes.RequestAllItems, {"Requesting Items"})
+			SendToApClient(MessageTypes.Handshake, {"Requesting Handshake"})
 		end
 		return
 	end
@@ -643,6 +650,7 @@ function _OnFrame()
 	if DeathlinkEnabled then
 		Deathlink()
 	end
+	ItemHandler:RemoveAbilities()
 	if frameCount == 0 and ReadByte(Save + 0x1D27) & 0x1 << 3 > 0 then --Dont run main logic every frame
 		APCommunication()
 	end

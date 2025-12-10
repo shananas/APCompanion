@@ -3,6 +3,7 @@ local ItemHandler = {}
 SoraBack = 0x25D8
 SoraFront = 0x2546
 SoraCurrentAbilitySlot = 0x25D8
+SoraCurrentAbilityInt = 70
 
 HighJumpSlot = 0x25DA
 QuickRunSlot = 0x25DC
@@ -13,10 +14,12 @@ GlideSlot = 0x25E2
 DonaldBack = 0x26F4
 DonaldFront = 0x2658
 DonaldCurrentAbilitySlot = 0x26F4
+DonaldCurrentAbilityInt = 78
 
 GoofyBack = 0x2808
 GoofyFront = 0x276C
 GoofyCurrentAbilitySlot = 0x2808
+GoofyCurrentAbilityInt = 78
 
 function ItemHandler:Reset()
   ConsolePrint("Item Handler Reset")
@@ -81,14 +84,17 @@ function ItemHandler:GiveAbility(value)
             end
         elseif SoraCurrentAbilitySlot > SoraFront then
             WriteShort(Save + SoraCurrentAbilitySlot, value.Address)
-            SoraCurrentAbilitySlot = SoraCurrentAbilitySlot -2
+            SoraCurrentAbilitySlot = SoraCurrentAbilitySlot - 2
+            SoraCurrentAbilityInt = SoraCurrentAbilityInt - 1
         end
     elseif value.Ability == "Donald" and DonaldCurrentAbilitySlot > DonaldFront then
         WriteShort(Save + DonaldCurrentAbilitySlot, value.Address)
-        DonaldCurrentAbilitySlot = DonaldCurrentAbilitySlot -2
+        DonaldCurrentAbilitySlot = DonaldCurrentAbilitySlot - 2
+        DonaldCurrentAbilityInt = SoraCurrentAbilityInt - 1
     elseif value.Ability == "Goofy" and GoofyCurrentAbilitySlot > GoofyFront then
         WriteShort(Save + GoofyCurrentAbilitySlot, value.Address)
-        GoofyCurrentAbilitySlot = GoofyCurrentAbilitySlot -2
+        GoofyCurrentAbilitySlot = GoofyCurrentAbilitySlot - 2
+        GoofyCurrentAbilityInt = SoraCurrentAbilityInt - 1
     end
 end
 
@@ -96,4 +102,15 @@ function ItemHandler:Request()
   SendToApClient(MessageTypes.RequestAllItems,{})
 end
 
+function ItemHandler:RemoveAbilities()
+    for i = 0, SoraCurrentAbilityInt do
+        WriteShort(SoraFront + (i * 2), 0)
+    end
+    for i = 0, DonaldCurrentAbilityInt do
+        WriteShort(DonaldFront + (i * 2), 0)
+    end
+    for i = 0, GoofyCurrentAbilityInt do
+        WriteShort(GoofyFront + (i * 2), 0)
+    end
+end
 return ItemHandler
