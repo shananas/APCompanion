@@ -1,25 +1,25 @@
 local ItemHandler = {}
 
-SoraBack = 0x25D8
-SoraFront = 0x2546
-SoraCurrentAbilitySlot = 0x25D8
-SoraBufferSlots = { 0x2546, 0x2548, 0x254A, 0x254C }
+local SoraBack = 0x25D8
+local SoraFront = 0x2546
+local SoraCurrentAbilitySlot = 0x25D8
+local SoraBufferSlots = { [0x2546] = true, [0x2548] = true, [0x254A] = true, [0x254C] = true }
 
-HighJumpSlot = 0x25DA
-QuickRunSlot = 0x25DC
-DodgeRollSlot = 0x25DE
-AerialDodgeSlot = 0x25E0
-GlideSlot = 0x25E2
+local HighJumpSlot = 0x25DA
+local QuickRunSlot = 0x25DC
+local DodgeRollSlot = 0x25DE
+local AerialDodgeSlot = 0x25E0
+local GlideSlot = 0x25E2
 
-DonaldBack = 0x26F4
-DonaldFront = 0x2658
-DonaldCurrentAbilitySlot = 0x26F4
-DonaldBufferSlots = { 0x2658, 0x265A, 0x265C, 0x265E }
+local DonaldBack = 0x26F4
+local DonaldFront = 0x2658
+local DonaldCurrentAbilitySlot = 0x26F4
+local DonaldBufferSlots = { [0x2658] = true, [0x265A] = true, [0x265C] = true, [0x265E] = true }
 
-GoofyBack = 0x2808
-GoofyFront = 0x276C
-GoofyCurrentAbilitySlot = 0x2808
-GoofyBufferSlots = { 0x276C, 0x276E,  0x2770, 0x2772 }
+local GoofyBack = 0x2808
+local GoofyFront = 0x276C
+local GoofyCurrentAbilitySlot = 0x2808
+local GoofyBufferSlots = { [0x276C] = true, [0x276E] = true,  [0x2770] = true, [0x2772] = true }
 
 function ItemHandler:Reset()
   ConsolePrint("Item Handler Reset")
@@ -82,32 +82,60 @@ function ItemHandler:GiveAbility(value)
             elseif current < 0x806D then
                 WriteShort(Save + GlideSlot, ReadShort(Save + GlideSlot)+1)
             end
-        elseif SoraCurrentAbilitySlot > SoraFront then
-            if ReadShort(Save + SoraCurrentAbilitySlot) == 0 then
-                WriteShort(Save + SoraCurrentAbilitySlot, value.Address)
-                SoraCurrentAbilitySlot = SoraCurrentAbilitySlot - 2
+        else
+            if SoraCurrentAbilitySlot <= SoraFront then
+                ConsolePrint("Max ability limit reached cannot receive any more abilities.")
             else
-                SoraCurrentAbilitySlot = SoraFront
+                if ReadShort(Save + SoraCurrentAbilitySlot) ~= 0 then
+                    SoraCurrentAbilitySlot = FindEmptyAbilitySlot(SoraCurrentAbilitySlot, SoraFront)
+                end
+                if SoraCurrentAbilitySlot > SoraFront then
+                    WriteShort(Save + SoraCurrentAbilitySlot, value.Address)
+                    SoraCurrentAbilitySlot = SoraCurrentAbilitySlot - 2
+                else
+                    ConsolePrint("Max ability limit reached cannot receive any more abilities.")
+                end
+            end
+        end
+    elseif value.Ability == "Donald" then
+        if  DonaldCurrentAbilitySlot <= DonaldFront then
+            ConsolePrint("Max ability limit reached cannot receive any more abilities.")
+        else
+            if ReadShort(Save + DonaldCurrentAbilitySlot) ~= 0 then
+                DonaldCurrentAbilitySlot = FindEmptyAbilitySlot(DonaldCurrentAbilitySlot, DonaldFront)
+            end
+            if DonaldCurrentAbilitySlot > DonaldFront then
+                WriteShort(Save + DonaldCurrentAbilitySlot, value.Address)
+                DonaldCurrentAbilitySlot = DonaldCurrentAbilitySlot - 2
+            else
                 ConsolePrint("Max ability limit reached cannot receive any more abilities.")
             end
         end
-    elseif value.Ability == "Donald" and DonaldCurrentAbilitySlot > DonaldFront then
-        if ReadShort(Save + DonaldCurrentAbilitySlot) == 0 then
-            WriteShort(Save + DonaldCurrentAbilitySlot, value.Address)
-            DonaldCurrentAbilitySlot = DonaldCurrentAbilitySlot - 2
-        else
-            DonaldCurrentAbilitySlot = DonaldFront
+    elseif value.Ability == "Goofy" then
+        if  GoofyCurrentAbilitySlot <= GoofyFront then
             ConsolePrint("Max ability limit reached cannot receive any more abilities.")
-        end
-    elseif value.Ability == "Goofy" and GoofyCurrentAbilitySlot > GoofyFront then
-        if ReadShort(Save + GoofyCurrentAbilitySlot) == 0 then
-            WriteShort(Save + GoofyCurrentAbilitySlot, value.Address)
-            GoofyCurrentAbilitySlot = GoofyCurrentAbilitySlot - 2
         else
-            GoofyCurrentAbilitySlot = GoofyFront
-            ConsolePrint("Max ability limit reached cannot receive any more abilities.")
+            if ReadShort(Save + GoofyCurrentAbilitySlot) ~= 0 then
+                GoofyCurrentAbilitySlot = FindEmptyAbilitySlot(GoofyCurrentAbilitySlot, GoofyFront)
+            end
+            if GoofyCurrentAbilitySlot > GoofyFront then
+                WriteShort(Save + GoofyCurrentAbilitySlot, value.Address)
+                GoofyCurrentAbilitySlot = GoofyCurrentAbilitySlot - 2
+            else
+                ConsolePrint("Max ability limit reached cannot receive any more abilities.")
+            end
         end
     end
+end
+
+function FindEmptyAbilitySlot (value, front)
+	while ReadShort(Save + value) ~= 0 do
+        value = value -2
+        if value <= front then
+            return value
+        end
+    end
+    return value
 end
 
 function ItemHandler:Request()
@@ -115,27 +143,27 @@ function ItemHandler:Request()
 end
 
 function ItemHandler:RemoveAbilities()
-    for i = 1, #SoraBufferSlots do
-        if ReadShort(Save + SoraBufferSlots[i] ~= 0) and not SoraBufferSlots[SoraCurrentAbilitySlot] then
-            ReadShort(Save + SoraCurrentAbilitySlot, ReadShort(Save + SoraBufferSlots[i]))
-            ReadShort(Save + SoraBufferSlots[i], 0)
-            SoraCurrentAbilitySlot = SoraCurrentAbilitySlot - 2
-        end
-    end
-    for i = 1, #DonaldBufferSlots do
-        if ReadShort(Save + DonaldBufferSlots[i] ~= 0) and not DonaldBufferSlots[DonaldCurrentAbilitySlot] then
-            ReadShort(Save + DonaldCurrentAbilitySlot, ReadShort(Save + DonaldBufferSlots[i]))
-            ReadShort(Save + DonaldBufferSlots[i], 0)
-            DonaldCurrentAbilitySlot = DonaldCurrentAbilitySlot - 2
-        end
-    end
-    for i = 1, #GoofyBufferSlots do
-        if ReadShort(Save + GoofyBufferSlots[i] ~= 0) and not GoofyBufferSlots[GoofyCurrentAbilitySlot] then
-            ReadShort(Save + GoofyCurrentAbilitySlot, ReadShort(Save + GoofyBufferSlots[i]))
-            ReadShort(Save + GoofyBufferSlots[i], 0)
-            GoofyCurrentAbilitySlot = GoofyCurrentAbilitySlot - 2
-        end
-    end
+   for slot, _ in pairs(SoraBufferSlots) do
+       if ReadShort(Save + slot) ~= 0 and not SoraBufferSlots[SoraCurrentAbilitySlot] and SoraCurrentAbilitySlot > SoraFront then
+           WriteShort(Save + SoraCurrentAbilitySlot, ReadShort(Save + slot))
+           WriteShort(Save + slot, 0)
+           SoraCurrentAbilitySlot = SoraCurrentAbilitySlot - 2
+       end
+   end
+   for slot, _ in pairs(DonaldBufferSlots) do
+       if ReadShort(Save + slot) ~= 0 and not DonaldBufferSlots[DonaldCurrentAbilitySlot] and DonaldCurrentAbilitySlot > DonaldFront then
+           WriteShort(Save + DonaldCurrentAbilitySlot, ReadShort(Save + slot))
+           WriteShort(Save + slot, 0)
+           DonaldCurrentAbilitySlot = DonaldCurrentAbilitySlot - 2
+       end
+   end
+   for slot, _ in pairs(GoofyBufferSlots) do
+       if ReadShort(Save + slot) ~= 0 and not GoofyBufferSlots[GoofyCurrentAbilitySlot] and GoofyCurrentAbilitySlot > GoofyFront then
+           WriteShort(Save + GoofyCurrentAbilitySlot, ReadShort(Save + slot))
+           WriteShort(Save + slot, 0)
+           GoofyCurrentAbilitySlot = GoofyCurrentAbilitySlot - 2
+       end
+   end
 end
 
 return ItemHandler

@@ -76,6 +76,7 @@ MessageTypes = {
 
 --Items
 items = {}
+itemqueue = {}
 abilities = {}
 
 --Locations
@@ -206,14 +207,13 @@ function HandleMessage(msg)
 				ConsolePrint("Invalid item received. Val: ".._msg)
 				return
 			end
-		ItemHandler:Receive(_item)
-		RoomSaveTask:StoreItem(_item)
+			table.insert(itemqueue, _item)
 		end
+
 	elseif msg.type == MessageTypes.ReceiveSingleItem then
 		ConsolePrint("Receiving single item")
 		local _item = getItemById(tonumber(msg.values[1]))
-		ItemHandler:Receive(_item)
-		RoomSaveTask:StoreItem(_item)
+		table.insert(itemqueue, _item)
 
 	elseif msg.type == MessageTypes.ClientCommand then
 		local _cmdId = tonumber(msg.values[1])
@@ -297,6 +297,22 @@ function ReceiveFromApClient()
 		end
 	else
 		return nil
+	end
+end
+
+function ProcessItemQueue()
+	local sent = 0
+	while sent < 10 and #itemqueue > 0 do
+		local item = itemqueue[1]
+		if ReadByte(Pause) == 0  and ReadByte(FadeStatus) == 0 and
+		ReadLong(PlayerGaugePointer) ~= 0 and ReadLong(ReadLong(PlayerGaugePointer)+0x88, true) ~= 0 then
+			ItemHandler:Receive(item)
+			RoomSaveTask:StoreItem(item)
+			table.remove(itemqueue,1)
+			sent = sent + 1
+		else
+			break
+		end
 	end
 end
 
@@ -653,6 +669,7 @@ function _OnFrame()
 	ItemHandler:RemoveAbilities()
 	if frameCount == 0 and ReadByte(Save + 0x1D27) & 0x1 << 3 > 0 then --Dont run main logic every frame
 		APCommunication()
+		ProcessItemQueue()
 	end
 end
 
