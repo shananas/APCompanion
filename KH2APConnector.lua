@@ -73,11 +73,16 @@ MessageTypes = {
 	Handshake  = 12,
 	Closed = 20
 }
-
+HandshakeSent = false
+HandshakeReceived = false
 --Items
 items = {}
-itemqueue = {}
 abilities = {}
+ItemsReceived = {
+	["Torn Page"] = 0,
+}
+TornPagesReceived = 0
+ItemQueue = {}
 
 --Locations
 Worlds = {}
@@ -136,6 +141,8 @@ FormSummonLevels = {
 }
 DeathlinkEnabled = false
 RecievedDeath = false
+LastReceivedIndex = -1
+
 
 -- ############################################################
 -- ######################  Socket  ############################
@@ -189,11 +196,16 @@ function HandleMessage(msg)
 
 	if msg.type == MessageTypes.Test then
 		ConsolePrint("test recieved")
-		local _item = getItemById(tonumber(msg.values[1]))
-		--ConsolePrint(_item.ID)
-		--ConsolePrint(_item.Name)
-		--ConsolePrint(_item.Address)
-		ItemHandler:Receive(_item)
+		local _item
+		ConsolePrint(tostring(msg.values[2]))
+		if msg.values[2] ~= nil then
+			_item = getAbilityById(tonumber(msg.values[1]), msg.values[2])
+		else
+			_item = getItemById(tonumber(msg.values[1]))
+		end
+		if _item ~= nil then
+			ItemHandler:Receive(_item)
+		end
 	end
 
 	if msg.type == MessageTypes.ReceiveAllItems then
@@ -207,13 +219,23 @@ function HandleMessage(msg)
 				ConsolePrint("Invalid item received. Val: ".._msg)
 				return
 			end
-			table.insert(itemqueue, _item)
+			table.insert(ItemQueue, _item)
 		end
 
 	elseif msg.type == MessageTypes.ReceiveSingleItem then
 		ConsolePrint("Receiving single item")
-		local _item = getItemById(tonumber(msg.values[1]))
-		table.insert(itemqueue, _item)
+		local _item
+		if tonumber(msg.values[3]) > LastReceivedIndex then
+			LastReceivedIndex = tonumber(msg.values[3])
+			if msg.values[2] == "false" then
+				_item = getItemById(tonumber(msg.values[1]))
+			else
+				_item = getAbilityById(tonumber(msg.values[1]), msg.values[2])
+			end
+			table.insert(ItemQueue, _item)
+		else
+			ConsolePrint("Already received item: " .. table.concat(msg.values, ","))
+		end
 
 	elseif msg.type == MessageTypes.ClientCommand then
 		local _cmdId = tonumber(msg.values[1])
@@ -246,6 +268,8 @@ function HandleMessage(msg)
 		table.insert(BountyBosses, parsed)
 
 	elseif msg.type == MessageTypes.Handshake then
+		HandshakeReceived = true
+		SendToApClient(MessageTypes.SlotData, {World})
 		if msg.values[1] == "True" then
 			ConsolePrint("Received handshake; Requesting items")
 			SendToApClient(MessageTypes.RequestAllItems, {"Requesting Items"})
@@ -279,6 +303,8 @@ function ReceiveFromApClient()
 				ConsolePrint("Server closed resetting client")
 				connectionInitialized = false
 				gameStarted = false
+				HandshakeSent = false
+				HandshakeReceived = false
 				client:close()
 				client = socket.tcp()
 				client:settimeout(0)
@@ -290,10 +316,6 @@ function ReceiveFromApClient()
 			ConsolePrint("partial")
 		elseif err  and err ~= "timeout" then
 			ConsolePrint("Error receiving message: " .. err)
-			if err == "closed" then
-				connectionInitialized = false
-				gameStarted = false
-			end
 		end
 	else
 		return nil
@@ -301,15 +323,36 @@ function ReceiveFromApClient()
 end
 
 function ProcessItemQueue()
-	local sent = 0
-	while sent < 10 and #itemqueue > 0 do
-		local item = itemqueue[1]
+	local Sent = 0
+	while Sent < 100 and #ItemQueue > 0 do
+		local item = ItemQueue[1]
 		if ReadByte(Pause) == 0  and ReadByte(FadeStatus) == 0 and
 		ReadLong(PlayerGaugePointer) ~= 0 and ReadLong(ReadLong(PlayerGaugePointer)+0x88, true) ~= 0 then
+			if item.Ability == "false" then
+				ConsolePrint(tostring(item.Name))
+				if item.Name ~= "Torn Page" then
+					if ItemsReceived[item.Name] then
+						if ItemsReceived[item.Name] < 255 then
+							ItemsReceived[item.Name] = ItemsReceived[item.Name] + 1
+						end
+					else
+						ItemsReceived[item.Name] = 1
+					end
+				else
+					TornPagesReceived = TornPagesReceived + 1
+					local TornPagesRedeemed = 0
+					for i = 1, #PoohProgress do
+						if ReadByte(Save + PoohProgress[i].Address) & 0x1 << PoohProgress[i].BitIndex > 0 then
+							TornPagesRedeemed = TornPagesRedeemed + 1
+						end
+					end
+					ItemsReceived[item.Name] = math.max(0, math.min(TornPagesReceived - TornPagesRedeemed, 255))
+				end
+			end
 			ItemHandler:Receive(item)
 			RoomSaveTask:StoreItem(item)
-			table.remove(itemqueue,1)
-			sent = sent + 1
+			table.remove(ItemQueue,1)
+			Sent = Sent + 1
 		else
 			break
 		end
@@ -374,15 +417,11 @@ function getItemById(item_id)
 			return items[i]
 		end
 	end
-	for i = 1, #abilities do
-		if abilities[i].ID == item_id then
-			return abilities[i]
-		end
-	end
 end
-function getAbilityById(ab_id)
+
+function getAbilityById(ab_id, member)
 	for i = 1, #abilities do
-		if abilities[i].ID == ab_id then
+		if abilities[i].ID == ab_id  and abilities[i].Ability == member then
 			return abilities[i]
 		end
 	end
@@ -459,14 +498,14 @@ function writeTxtToGame(startAddr, txt, fillerCnt)
 end
 
 function updateReceived(itemCnt)
-	if currentReceivedIndex < lastReceivedIndex then --Increment current received until we reach our last received
-		currentReceivedIndex = currentReceivedIndex+1
-	else --Fill with item index of latest received
-		currentReceivedIndex = itemCnt
-	end
-	WriteInt(MemoryAddresses.medals, currentReceivedIndex)
-	ConsolePrint("Current Received Index: "..tostring(currentReceivedIndex))
-	ConsolePrint("Last Received Index: "..tostring(lastReceivedIndex))
+	--if currentReceivedIndex < LastReceivedIndex then --Increment current received until we reach our last received
+	--	currentReceivedIndex = currentReceivedIndex+1
+	--else --Fill with item index of latest received
+	--	currentReceivedIndex = itemCnt
+	--end
+	--WriteInt(MemoryAddresses.medals, currentReceivedIndex)
+	--ConsolePrint("Current Received Index: "..tostring(currentReceivedIndex))
+	--ConsolePrint("Last Received Index: "..tostring(LastReceivedIndex))
 end
 
 function GoalGame()
@@ -562,7 +601,7 @@ function CheckBountiesObtained()
 end
 
 function CurrentWorldLocation()
-    CurrentWorld = ReadByte(Now)
+    CurrentWorld = World
 	if LastWorld ~= CurrentWorld then
 		LastWorld = CurrentWorld
 		SendToApClient(MessageTypes.SlotData, {CurrentWorld})
@@ -651,25 +690,36 @@ function _OnFrame()
 		PrevPlace = ReadShort(Now+0x30)
 		ARD = ReadLong(ARDPointer)
 	end
-	frameCount = (frameCount + 1) % 30
+	frameCount = (frameCount + 1) % 15
 	if not gameStarted and frameCount == 0 then
 		local connected =  ConnectToApClient()
 
 		if connected then
 			connectionInitialized = true
 			gameStarted = true
-			SendToApClient(MessageTypes.Handshake, {"Requesting Handshake"})
 		end
 		return
 	end
-	RoomSaveTask:GetRoomChange()
-	if DeathlinkEnabled then
-		Deathlink()
-	end
-	ItemHandler:RemoveAbilities()
-	if frameCount == 0 and ReadByte(Save + 0x1D27) & 0x1 << 3 > 0 then --Dont run main logic every frame
-		APCommunication()
-		ProcessItemQueue()
+	PCInteracted = ReadByte(Save + 0x1D27) & 0x1 << 3 > 0
+	if gameStarted and PCInteracted then
+		if not HandshakeSent then
+			SendToApClient(MessageTypes.Handshake, {"Requesting Handshake"})
+			HandshakeSent = true
+			return
+		end
+		if not HandshakeReceived then
+			APCommunication()
+		else
+			RoomSaveTask:GetRoomChange()
+			ItemHandler:RemoveAbilities()
+			if DeathlinkEnabled then
+				Deathlink()
+			end
+			if frameCount == 0 then --Dont run main logic every frame
+				APCommunication()
+				ProcessItemQueue()
+			end
+		end
 	end
 end
 

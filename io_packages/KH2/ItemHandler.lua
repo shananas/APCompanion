@@ -4,6 +4,8 @@ local SoraBack = 0x25D8
 local SoraFront = 0x2546
 local SoraCurrentAbilitySlot = 0x25D8
 local SoraBufferSlots = { [0x2546] = true, [0x2548] = true, [0x254A] = true, [0x254C] = true }
+local SoraWeaponIDs = { [42] = true, [43] = true, [480] = true, [481] = true, [484] = true, [485] = true, [486] = true, [487] = true, [488] = true, [489] = true, [490] = true, [491] = true,
+    [492] = true, [493] = true, [494] = true, [495] = true, [496] = true, [543] = true, [497] = true, [498] = true, [499] = true, [500] = true, [544] = true, [71] = true }
 
 local HighJumpSlot = 0x25DA
 local QuickRunSlot = 0x25DC
@@ -15,11 +17,13 @@ local DonaldBack = 0x26F4
 local DonaldFront = 0x2658
 local DonaldCurrentAbilitySlot = 0x26F4
 local DonaldBufferSlots = { [0x2658] = true, [0x265A] = true, [0x265C] = true, [0x265E] = true }
+local DonaldWeaponIDs = { [546] = true, [150] = true, [155] = true, [549] = true, [550] = true, [551] = true, [154] = true, [503] = true, [156] = true }
 
 local GoofyBack = 0x2808
 local GoofyFront = 0x276C
 local GoofyCurrentAbilitySlot = 0x2808
 local GoofyBufferSlots = { [0x276C] = true, [0x276E] = true,  [0x2770] = true, [0x2772] = true }
+local GoofyWeaponIDs = { [146] = true, [553] = true, [145] = true, [556] = true, [557] = true, [147] = true, [141] = true, [504] = true, [558] = true }
 
 function ItemHandler:Reset()
   ConsolePrint("Item Handler Reset")
@@ -39,9 +43,17 @@ function ItemHandler:GiveItem(value)
     --ConsolePrint(string.format("%X", value.Address))
     --ConsolePrint(value.Bitmask)
     if value.Bitmask ~= null then
-        WriteByte(Save + value.Address, ReadByte(Save + value.Address)| 0x01 <<value.Bitmask)
+        WriteByte(Save + value.Address, ItemsReceived[value.Name]| 0x01 <<value.Bitmask)
     else
-        WriteByte(Save + value.Address, ReadByte(Save + value.Address)+1)
+        if SoraWeaponIDs[value.ID] then
+            WriteByte(Save + value.Address, ItemsReceived[value.Name])
+        elseif DonaldWeaponIDs[value.ID] then
+            WriteByte(Save + value.Address, ItemsReceived[value.Name])
+        elseif GoofyWeaponIDs[value.ID] then
+            WriteByte(Save + value.Address, ItemsReceived[value.Name])
+        else
+            WriteByte(Save + value.Address, ItemsReceived[value.Name])
+        end
     end
 end
 

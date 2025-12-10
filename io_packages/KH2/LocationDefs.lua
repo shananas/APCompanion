@@ -703,7 +703,7 @@ function LocationDefs:WeaponSlots()
     }
  end
 
- function LocationDefs:TornPageLocks()
+function LocationDefs:TornPageLocks()
     PoohProgress = {
         {Name = "Torn Page 1", Address = 0x1DB7, BitIndex = 4}, -- --Scenario_1_start
         {Name = "Torn Page 2", Address = 0x1DB7, BitIndex = 7}, -- --Scenario_2_start
@@ -711,5 +711,6 @@ function LocationDefs:WeaponSlots()
         {Name = "Torn Page 4", Address = 0x1DB8, BitIndex = 4}, -- --Scenario_4_start
         {Name = "Torn Page 5", Address = 0x1DB8, BitIndex = 7}, -- --Scenario_5_start
     }
- end
+end
+
 return LocationDefs
