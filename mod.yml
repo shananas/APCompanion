@@ -63,6 +63,10 @@ assets:
   method: copy
   source:
   - name: io_packages/KH2/LocationHandler.lua
+- name: scripts/io_packages/KH2/RoomSaveTask.lua
+  method: copy
+  source:
+  - name: io_packages/KH2/RoomSaveTask.lua
 - name: scripts/KH2APConnector.lua
   method: copy
   source:
