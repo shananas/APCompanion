@@ -11,49 +11,32 @@ local ItemDefs = require("KH2.ItemDefs")
 local LocationDefs = require("KH2.LocationDefs")
 local LocationHandler = require("KH2.LocationHandler")
 local RoomSaveTask = require("KH2.RoomSaveTask")
---[[local PromptTask = require("KHDDD.Tasks.PromptTask")
-local CheatTask = require("KHDDD.Tasks.CheatTask")
-local ConfigTask = require("KHDDD.Tasks.ConfigTask")
-local SoftlockTask = require("KHDDD.Tasks.SoftlockTask")--]]
 
 LUAGUI_NAME = "KH2 AP Connector [Socket]"
 LUAGUI_AUTH = "Shananas"
 LUAGUI_DESC = "Kingdom Hearts 2 AP Integration using Lua Socket"
-
-
---Define Globals
-local gameID = GAME_ID
-local engineType = ENGINE_TYPE
 
 local canExecute = false
 local gameStarted = false
 local connectionInitialized = false
 
 frameCount = 0
+NotificationFrameCount = 0
 connected = false
+ChestWait = false
 
 local client
 
-KHSCII = {
-  A = 0x41,B = 0x42,C = 0x43,D = 0x44,E = 0x45,F = 0x46,
-  G = 0x47,H = 0x48,I = 0x49,J = 0x4A,K = 0x4B,
-  L = 0x4C,M = 0x4D,N = 0x4E,O = 0x4F,P = 0x50,
-  Q = 0x51,R = 0x52,S = 0x53,T = 0x54,U = 0x55,
-  V = 0x56,W = 0x57,X = 0x58,Y = 0x59,Z = 0x5A,
-  a = 0x61,b = 0x62,c = 0x63,d = 0x64,e = 0x65,f = 0x66,
-  g = 0x67,h = 0x68,i = 0x69,j = 0x6A,k = 0x6B,
-  l = 0x6C,m = 0x6D,n = 0x6E,o = 0x6F,p = 0x70,
-  q = 0x71,r = 0x72,s = 0x73,t = 0x74,u = 0x75,
-  v = 0x76,w = 0x77,x = 0x78,y = 0x79,z = 0x7A,
-  Period = 0x2E,Space = 0x20,Exclamation = 0x21, And = 0x26
-}
-
-item_usefulness = {
-	trap = 0,
-	useless = 1,
-	normal = 2,
-	progression = 3,
-	special = 4
+special_dict = {
+	 [' '] = 0x01, ['\n'] = 0x02, ['-'] = 0x54, ['!']  = 0x48, ['?']  = 0x49, ['%'] = 0x4A, ['/'] = 0x4B,
+	 ['.'] = 0x4F, [',']  = 0x50, [';'] = 0x51, [' ='] = 0x52, ['\''] = 0x57, ['('] = 0x5A, [')'] = 0x5B,
+	 ['['] = 0x62, [']']  = 0x63, ['à'] = 0xB7, ['á']  = 0xB8, ['â']  = 0xB9, ['ä'] = 0xBA, ['è'] = 0xBB,
+	 ['é'] = 0xBC, ['ê']  = 0xBD, ['ë'] = 0xBE, ['ì']  = 0xBF, ['í']  = 0xC0, ['î'] = 0xC1, ['ï'] = 0xC2,
+	 ['ñ'] = 0xC3, ['ò']  = 0xC4, ['ó'] = 0xC5, ['ô']  = 0xC6, ['ö']  = 0xC7, ['ù'] = 0xC8, ['ú'] = 0xC9,
+	 ['û'] = 0xCA, ['ü']  = 0xCB, ['ç'] = 0xE8, ['À']  = 0xD0, ['Á']  = 0xD1, ['Â'] = 0xD2, ['Ä'] = 0xD3,
+	 ['È'] = 0xD4, ['É']  = 0xD5, ['Ê'] = 0xD6, ['Ë']  = 0xD7, ['Ì']  = 0xD8, ['Í'] = 0xD9, ['Î'] = 0xDA,
+	 ['Ï'] = 0xDB, ['Ñ']  = 0xDC, ['Ò'] = 0xDD, ['Ó']  = 0xDE, ['Ô']  = 0xDF, ['Ö'] = 0xE0, ['Ù'] = 0xE1,
+	 ['Ú'] = 0xE2, ['Û']  = 0xE3, ['Ü'] = 0xE4, ['¡']  = 0xE5, ['¿']  = 0xE6, ['Ç'] = 0xE7
 }
 
 MessageTypes = {
@@ -62,19 +45,20 @@ MessageTypes = {
 	WorldLocationChecked = 1,
 	LevelChecked = 2,
 	KeybladeChecked = 3,
-	ClientCommand = 4,
 	Deathlink = 5,
     SlotData = 6,
     BountyList = 7,
-    ReceiveAllItems = 8,
+    ReceiveItem = 10,
     RequestAllItems = 9,
-    ReceiveSingleItem = 10,
     Victory = 11,
 	Handshake  = 12,
+	NotificationType = 13,
+	NotificationMessage = 14,
 	Closed = 20
 }
 HandshakeSent = false
 HandshakeReceived = false
+
 --Items
 items = {}
 abilities = {}
@@ -94,25 +78,6 @@ FinalForm = {}
 SummonLevels = {}
 WeaponAbilities = {}
 FormWeaponAbilities = {}
---worldTables = {
---   [2]  = Worlds.TT_Checks,
---   [4]  = Worlds.HB_Checks,
---   [5]  = Worlds.BC_Checks,
---   [6]  = Worlds.OC_Checks,
---   [7]  = Worlds.AG_Checks,
---   [8]  = Worlds.LoD_Checks,
---   [9]  = Worlds.Pooh_Checks,
---   [10] = Worlds.PL_Checks,
---   [11] = Worlds.AT_Checks,
---   [12] = Worlds.DC_Checks,
---   [13] = Worlds.TR_Checks,
---   [14] = Worlds.HT_Checks,
---   [16] = Worlds.PR_Checks,
---   [17] = Worlds.SP_Checks,
---   [18] = Worlds.TWTNW_Checks
---}
-LastWorld = -1
-CurrentWorld = -1
 
 LocationsChecked = {}
 
@@ -123,6 +88,7 @@ MaxLimitLevel = { value = 1 }
 MaxMasterLevel = { value = 1 }
 MaxFinalLevel = { value = 1 }
 MaxSummonLevel = { value = 1 }
+
 FinalXemnasRequired = true
 FinalXemnasBeaten = false
 Goal = -1
@@ -142,6 +108,11 @@ FormSummonLevels = {
 DeathlinkEnabled = false
 RecievedDeath = false
 LastReceivedIndex = -1
+LastWorld = -1
+CurrentWorld = -1
+SendNotificationType = "none"
+ReceiveNotificationType = "none"
+NotificationMessage = {}
 
 
 -- ############################################################
@@ -208,21 +179,7 @@ function HandleMessage(msg)
 		end
 	end
 
-	if msg.type == MessageTypes.ReceiveAllItems then
-		ConsolePrint("Receiving all items")
-		ItemHandler:Reset()
-		for i = 1, #msg.values do
-			local _msg = msg.values[i]
-			ConsolePrint("Msg Value: ".._msg)
-			local _item = getItemById(tonumber(_msg))
-			if _item == nil then
-				ConsolePrint("Invalid item received. Val: ".._msg)
-				return
-			end
-			table.insert(ItemQueue, _item)
-		end
-
-	elseif msg.type == MessageTypes.ReceiveSingleItem then
+	if msg.type == MessageTypes.ReceiveItem then
 		ConsolePrint("Receiving single item")
 		local _item
 		if tonumber(msg.values[3]) > LastReceivedIndex then
@@ -236,9 +193,6 @@ function HandleMessage(msg)
 		else
 			ConsolePrint("Already received item: " .. table.concat(msg.values, ","))
 		end
-
-	elseif msg.type == MessageTypes.ClientCommand then
-		local _cmdId = tonumber(msg.values[1])
 
 	elseif msg.type == MessageTypes.Deathlink then
 		if msg.values[1] ~= nil then
@@ -274,6 +228,21 @@ function HandleMessage(msg)
 			ConsolePrint("Received handshake; Requesting items")
 			SendToApClient(MessageTypes.RequestAllItems, {"Requesting Items"})
 		end
+
+	elseif msg.type == MessageTypes.NotificationType then
+		if msg.values[1] == "receive" then
+			ReceiveNotificationType = msg.values[2]
+			ConsolePrint(ReceiveNotificationType)
+		elseif msg.values[1] == "send" then
+			SendNotificationType = msg.values[2]
+			ConsolePrint(SendNotificationType)
+		else
+			ConsolePrint(msg[1].values)
+		end
+
+	elseif msg.type == MessageTypes.NotificationMessage then
+		table.insert(NotificationMessage, msg.values[1])
+
 	end
 end
 
@@ -363,54 +332,6 @@ end
 -- ######################  Helpers  ###########################
 -- ############################################################
 
-function toHex(str)
-	return string.format("%X", str)
-end
-
-function toBits(num)
-	-- returns a table of bits, least significant first.
-	local t={} -- will contain the bits
-	while num>0 do
-		rest=math.fmod(num,2)
-		t[#t+1]=rest
-		num=(num-rest)/2
-	end
-	return t
-end
-
-function hasValue(arr, val)
-	for index, value in ipairs(arr) do
-		if value == val then
-			return true
-		end
-	end
-	return false
-end
-
-function countValues(arr, val)
-	local _cnt = 0
-	for index, value in ipairs(arr) do
-		if value == val then
-			_cnt = _cnt + 1
-		end
-	end
-	return _cnt
-end
-
-function removeDuplicates(arr)
-	local _uniqueArr = {}
-	local _seen = {}
-
-	for _, value in ipairs(arr) do
-		if not _seen[value] then
-			table.insert(_uniqueArr, value)
-			_seen[value] = true
-		end
-	end
-
-	return _uniqueArr
-end
-
 function getItemById(item_id)
 	for i = 1, #items do
 		if items[i].ID == item_id then
@@ -438,14 +359,6 @@ function SplitString(inputstr, sep)
 	return t
 end
 
-function GetArraySum(arr)
-	local _arrSum = 0
-	for i=1, #arr do
-		_arrSum = _arrSum + arr[i]
-	end
-	return _arrSum
-end
-
 function GetMessageType(value)
 	for name, number in pairs(MessageTypes) do
 		if number == value then
@@ -457,55 +370,47 @@ end
 
 function textToKHSCII(value)
 	--Returns byte array based on string
-	returnArr = {}
-	for i=1, #value do
+	local returnArr = {}
+	local i = 1
+	while i <= #value do
 		local c = value:sub(i, i)
-		local charCode = charToKHSCII(c)
-		table.insert(returnArr, charCode)
-		table.insert(returnArr, 0x00)
+		local charCode = nil
+		if 'a' <= c and c <= 'z' then
+			charCode = string.byte(c) + 0x39
+			i = i + 1
+		elseif 'A' <= c and c <= 'Z' then
+			charCode = string.byte(c) - 0x13
+			i = i + 1
+		elseif '0' <= c and c <= '9' then
+			charCode = string.byte(c) + 0x60
+			i = i + 1
+		elseif c == '{' then
+			local command = value:sub(i, i + 5)
+			if command:match("^%{0x[%da-fA-F][%da-fA-F]%}$") then
+			    local hexVal = command:sub(2, 5)
+			    charCode = tonumber(hexVal, 16)
+			    i = i + 6  -- skip the whole command
+			else
+			    i = i + 1  -- not a valid command, just move forward
+			end
+		else
+			if special_dict[c] then
+				charCode = special_dict[c]
+			else
+				charCode = 0x01
+			end
+			i = i + 1
+		end
+
+		if charCode ~= nil then
+			table.insert(returnArr, charCode)
+		else
+			i = i + 1
+		end
 	end
+	table.insert(returnArr, 0x00)
+
 	return returnArr
-end
-
-function charToKHSCII(char)
-	local returnChars = {
-		["A"] = KHSCII.A,["B"] = KHSCII.B,["C"] = KHSCII.C,["D"] = KHSCII.D,
-		["E"] = KHSCII.E,["F"] = KHSCII.F,["G"] = KHSCII.G,["H"] = KHSCII.H,
-		["I"] = KHSCII.I,["J"] = KHSCII.J,["K"] = KHSCII.K,["L"] = KHSCII.L,
-		["M"] = KHSCII.M,["N"] = KHSCII.N,["O"] = KHSCII.O,["P"] = KHSCII.P,
-		["Q"] = KHSCII.Q,["R"] = KHSCII.R,["S"] = KHSCII.S,["T"] = KHSCII.T,
-		["U"] = KHSCII.U,["V"] = KHSCII.V,["W"] = KHSCII.W,["X"] = KHSCII.X,
-		["Y"] = KHSCII.Y,["Z"] = KHSCII.Z,
-		["a"] = KHSCII.a,["b"] = KHSCII.b,["c"] = KHSCII.c,["d"] = KHSCII.d,
-		["e"] = KHSCII.e,["f"] = KHSCII.f,["g"] = KHSCII.g,["h"] = KHSCII.h,
-		["i"] = KHSCII.i,["j"] = KHSCII.j,["k"] = KHSCII.k,["l"] = KHSCII.l,
-		["m"] = KHSCII.m,["n"] = KHSCII.n,["o"] = KHSCII.o,["p"] = KHSCII.p,
-		["q"] = KHSCII.q,["r"] = KHSCII.r,["s"] = KHSCII.s,["t"] = KHSCII.t,
-		["u"] = KHSCII.u,["v"] = KHSCII.v,["w"] = KHSCII.w,["x"] = KHSCII.x,
-		["y"] = KHSCII.y,["z"] = KHSCII.z,
-		["."] = KHSCII.Period,[" "] = KHSCII.Space,["!"] = KHSCII.Exclamation,["&"] = KHSCII.And
-	}
-	return returnChars[char]
-end
-
-function writeTxtToGame(startAddr, txt, fillerCnt)
-	txtBytes = textToKHSCII(txt)
-	for i=1, fillerCnt do
-		table.insert(txtBytes, 0x00)
-		table.insert(txtBytes, 0x00)
-	end
-	WriteArray(startAddr, txtBytes)
-end
-
-function updateReceived(itemCnt)
-	--if currentReceivedIndex < LastReceivedIndex then --Increment current received until we reach our last received
-	--	currentReceivedIndex = currentReceivedIndex+1
-	--else --Fill with item index of latest received
-	--	currentReceivedIndex = itemCnt
-	--end
-	--WriteInt(MemoryAddresses.medals, currentReceivedIndex)
-	--ConsolePrint("Current Received Index: "..tostring(currentReceivedIndex))
-	--ConsolePrint("Last Received Index: "..tostring(LastReceivedIndex))
 end
 
 function GoalGame()
@@ -639,6 +544,42 @@ function sendToInv(item)
     ItemHandler:Receive(item)
 end
 
+function NotificationTest()
+	if NotificationFrameCount == 0 and #NotificationMessage > 0 then
+		if SendNotificationType == "puzzle" then
+			if ReadByte(0x800000) == 0 then
+				Notification = textToKHSCII(NotificationMessage[1])
+				WriteArray(0x800104, Notification)
+				ConsolePrint(tostring(NotificationMessage[1]))
+				for _,v in ipairs(Notification) do io.write(string.format("0x%02X ", v)) end print()
+				WriteByte(0x800000, 2)
+				table.remove(NotificationMessage,1)
+			end
+		elseif SendNotificationType == "info" then
+			InfoBarPointerRef = ReadLong(InfoBarPointer)
+			if ReadByte(0x800000) == 0 and InfoBarPointerRef ~= 0 and ReadInt(InfoBarPointerRef + 0x48) == 0 then
+				WriteByte(0x800000, 1)
+				Notification = textToKHSCII(NotificationMessage[1])
+				WriteArray(0x800004, Notification)
+				table.remove(NotificationMessage,1)
+			end
+		elseif SendNotificationType == "chest" then
+			if not ChestWait then
+				if ReadByte(0x800000) == 0 then
+					Notification = textToKHSCII(NotificationMessage[1])
+					WriteByte(0x800150, 0)
+					WriteArray(0x800154, Notification)
+					ChestWait = true
+				end
+			elseif ChestFrameCount == 0 then
+				WriteByte(0x800000, 3)
+				table.remove(NotificationMessage,1)
+				ChestWait = false
+			end
+		end
+	end
+end
+
 -- ############################################################
 -- ######################  Game Setup  ########################
 -- ############################################################
@@ -660,7 +601,6 @@ function APCommunication()
 end
 
 function _OnInit()
-	ConsolePrint("Game ID: ".. tostring(gameID))
 	--Initialize items and locations
 	LocationDefs:DefineWorldEvents()
 	LocationDefs:FormLevels()
@@ -672,6 +612,7 @@ function _OnInit()
 	print('Lua Socket test')
 	client = socket.tcp()
 	client:settimeout(0)
+	WriteByte(0x800000, 0)
 end
 
 function _OnFrame()
@@ -691,6 +632,11 @@ function _OnFrame()
 		ARD = ReadLong(ARDPointer)
 	end
 	frameCount = (frameCount + 1) % 15
+	NotificationFrameCount = (NotificationFrameCount + 1) % 30 --IF I CHANGE THIS CHECK CHEST NOTIFICATION WAIT TIME CASUE IT'LL NEED TO BE UPDATED
+	ChestFrameCount = 0
+	if ChestWait then
+		ChestFrameCount = (ChestFrameCount + 1) % 60
+	end
 	if not gameStarted and frameCount == 0 then
 		local connected =  ConnectToApClient()
 
@@ -710,6 +656,7 @@ function _OnFrame()
 		if not HandshakeReceived then
 			APCommunication()
 		else
+			NotificationTest()
 			RoomSaveTask:GetRoomChange()
 			ItemHandler:RemoveAbilities()
 			if DeathlinkEnabled then

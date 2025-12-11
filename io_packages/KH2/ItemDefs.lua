@@ -254,13 +254,13 @@ function ItemDefs:DefineAbilities()
         {ID = 422, Name = "MP Hastega",            Ability = "Sora", Address = 0x1A6},
         {ID = 414, Name = "Defender",              Ability = "Sora", Address = 0x19E},
         {ID = 542, Name = "Damage Control",        Ability = "Sora", Address = 0x21E},
-        {ID = 404, Name = "No Experience",         Ability = "Sora", Address = 0x194},
         {ID = 541, Name = "Light & Darkness",      Ability = "Sora", Address = 0x21D},
         {ID = 403, Name = "Magic Lock-On",         Ability = "Sora", Address = 0x193},
         {ID = 402, Name = "Leaf Bracer",           Ability = "Sora", Address = 0x192},
         {ID = 400, Name = "Combination Boost",     Ability = "Sora", Address = 0x190},
         {ID = 416, Name = "Once More",             Ability = "Sora", Address = 0x1A0},
         {ID = 415, Name = "Second Chance",         Ability = "Sora", Address = 0x19F},
+        {ID = 404, Name = "No Experience",         Ability = "Sora", Address = 0x194},
 
         --Action Abilities
         {ID = 82,  Name = "Guard",                 Ability = "Sora", Address = 0x052},

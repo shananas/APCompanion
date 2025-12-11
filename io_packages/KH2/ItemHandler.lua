@@ -40,8 +40,6 @@ function ItemHandler:Receive(item)
 end
 
 function ItemHandler:GiveItem(value)
-    --ConsolePrint(string.format("%X", value.Address))
-    --ConsolePrint(value.Bitmask)
     if value.Bitmask ~= null then
         WriteByte(Save + value.Address, ItemsReceived[value.Name]| 0x01 <<value.Bitmask)
     else
