@@ -164,10 +164,6 @@ assets:
   method: copy
   source:
   - name: remastered/itempic/AP.dds
-- name: itempic/item-031.imd #DC Key (Dummy 13)
-  method: copy
-  source:
-  - name: itempic/item-031.imd
 - name: remastered/itempic/item-031.imd/-0.dds #DC Key (Dummy 13)
   platform: pc
   method: copy

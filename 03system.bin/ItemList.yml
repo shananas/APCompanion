@@ -89,7 +89,7 @@ Items:
   Picture: 19
   Icon1: 0
   Icon2: 26
-- Id: 118 #Mickey’s House Map (Item Slot up)
+- Id: 118 #Mickey's House Map (Item Slot up)
   Type: Map
   Flag0: 1
   Flag1: 13
@@ -222,21 +222,6 @@ Items:
   Command: 0
   Slot: 193
   Picture: 230
-  Icon1: 0
-  Icon2: 19
-- Id: 460 #DUMMY 13 (DC Key)
-  Type: Recipe
-  Flag0: 0
-  Flag1: 0
-  Rank: C
-  StatEntry: 0
-  Name: 0x3D16
-  Description: 0x3D17
-  ShopBuy: 0
-  ShopSell: 0
-  Command: 0
-  Slot: 221
-  Picture: 31
   Icon1: 0
   Icon2: 19
 - Id: 461 #DUMMY 14 (AP Item)
