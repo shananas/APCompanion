@@ -22,6 +22,7 @@ local connectionInitialized = false
 
 frameCount = 0
 NotificationFrameCount = 0
+ChestFrameCount = 0
 connected = false
 ChestWait = false
 
@@ -660,7 +661,6 @@ function _OnFrame()
 	end
 	frameCount = (frameCount + 1) % 15
 	NotificationFrameCount = (NotificationFrameCount + 1) % 30 --IF I CHANGE THIS CHECK CHEST NOTIFICATION WAIT TIME CASUE IT'LL NEED TO BE UPDATED
-	ChestFrameCount = 0
 	if ChestWait then
 		ChestFrameCount = (ChestFrameCount + 1) % 60
 	end
