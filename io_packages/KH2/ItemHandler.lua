@@ -58,94 +58,43 @@ end
 function ItemHandler:GiveAbility(value)
     if value.Ability == "Sora" then
         if value.Name == "High Jump" then
-            current = ReadShort(Save + HighJumpSlot) | 0x8000
-            if current == 0x8000 then
-                WriteShort(Save + HighJumpSlot, 0x05E)
-            elseif current < 0x8061 then
-                WriteShort(Save + HighJumpSlot, ReadShort(Save + HighJumpSlot)+1)
-            end
+            local equipped = ReadShort(Save + HighJumpSlot) & 0x8000
+            WriteShort(Save + HighJumpSlot, SoraGrowthReceived[value.Name].current | equipped)
         elseif value.Name == "Quick Run" then
-            current = ReadShort(Save + QuickRunSlot) | 0x8000
-            if current == 0x8000 then
-                WriteShort(Save + QuickRunSlot, 0x062)
-            elseif current < 0x8065 then
-                WriteShort(Save + QuickRunSlot, ReadShort(Save + QuickRunSlot)+1)
-            end
+            local equipped = ReadShort(Save + QuickRunSlot) & 0x8000
+            WriteShort(Save + QuickRunSlot, SoraGrowthReceived[value.Name].current | equipped)
         elseif value.Name == "Dodge Roll" then
-            current = ReadShort(Save + DodgeRollSlot) | 0x8000
-            if current == 0x8000 then
-                WriteShort(Save + DodgeRollSlot, 0x234)
-            elseif current < 0x8237 then
-                WriteShort(Save + DodgeRollSlot, ReadShort(Save + DodgeRollSlot)+1)
-            end
+            local equipped = ReadShort(Save + DodgeRollSlot) & 0x8000
+            WriteShort(Save + DodgeRollSlot, SoraGrowthReceived[value.Name].current | equipped)
         elseif value.Name == "Aerial Dodge" then
-            current = ReadShort(Save + AerialDodgeSlot) | 0x8000
-            if current == 0x8000 then
-                WriteShort(Save + AerialDodgeSlot, 0x066)
-            elseif current < 0x8069 then
-                WriteShort(Save + AerialDodgeSlot, ReadShort(Save + AerialDodgeSlot)+1)
-            end
+            local equipped = ReadShort(Save + AerialDodgeSlot) & 0x8000
+            WriteShort(Save + AerialDodgeSlot, SoraGrowthReceived[value.Name].current | equipped)
         elseif value.Name == "Glide" then
-            current = ReadShort(Save + GlideSlot) | 0x8000
-            if current == 0x8000 then
-                WriteShort(Save + GlideSlot, 0x06A)
-            elseif current < 0x806D then
-                WriteShort(Save + GlideSlot, ReadShort(Save + GlideSlot)+1)
-            end
+            local equipped = ReadShort(Save + GlideSlot) & 0x8000
+            WriteShort(Save + GlideSlot, SoraGrowthReceived[value.Name].current | equipped)
         else
-            if SoraCurrentAbilitySlot <= SoraFront then
-                ConsolePrint("Max ability limit reached cannot receive any more abilities.")
+            local slot = SoraBack -(#SoraAbilitiesReceived - 1) * 2
+            if not SoraBufferSlots[slot] then
+                WriteShort(Save + slot, value.Address)
             else
-                if ReadShort(Save + SoraCurrentAbilitySlot) ~= 0 then
-                    SoraCurrentAbilitySlot = FindEmptyAbilitySlot(SoraCurrentAbilitySlot, SoraFront)
-                end
-                if SoraCurrentAbilitySlot > SoraFront then
-                    WriteShort(Save + SoraCurrentAbilitySlot, value.Address)
-                    SoraCurrentAbilitySlot = SoraCurrentAbilitySlot - 2
-                else
-                    ConsolePrint("Max ability limit reached cannot receive any more abilities.")
-                end
+                ConsolePrint("Error too many abilities cannot receive anymore. Ability skipped "  .. value.Name)
             end
         end
     elseif value.Ability == "Donald" then
-        if  DonaldCurrentAbilitySlot <= DonaldFront then
-            ConsolePrint("Max ability limit reached cannot receive any more abilities.")
+        local slot = DonaldBack -(#DonaldAbilitiesReceived - 1) * 2
+        if not DonaldBufferSlots[slot] then
+            WriteShort(Save + slot, value.Address)
         else
-            if ReadShort(Save + DonaldCurrentAbilitySlot) ~= 0 then
-                DonaldCurrentAbilitySlot = FindEmptyAbilitySlot(DonaldCurrentAbilitySlot, DonaldFront)
-            end
-            if DonaldCurrentAbilitySlot > DonaldFront then
-                WriteShort(Save + DonaldCurrentAbilitySlot, value.Address)
-                DonaldCurrentAbilitySlot = DonaldCurrentAbilitySlot - 2
-            else
-                ConsolePrint("Max ability limit reached cannot receive any more abilities.")
-            end
+            ConsolePrint("Error too many abilities cannot receive anymore. Ability skipped "  .. value.Name)
         end
     elseif value.Ability == "Goofy" then
-        if  GoofyCurrentAbilitySlot <= GoofyFront then
-            ConsolePrint("Max ability limit reached cannot receive any more abilities.")
+        local slot = GoofyBack -(#GoofyAbilitiesReceived - 1) * 2
+        if not GoofyBufferSlots[slot] then
+            WriteShort(Save + slot, value.Address)
         else
-            if ReadShort(Save + GoofyCurrentAbilitySlot) ~= 0 then
-                GoofyCurrentAbilitySlot = FindEmptyAbilitySlot(GoofyCurrentAbilitySlot, GoofyFront)
-            end
-            if GoofyCurrentAbilitySlot > GoofyFront then
-                WriteShort(Save + GoofyCurrentAbilitySlot, value.Address)
-                GoofyCurrentAbilitySlot = GoofyCurrentAbilitySlot - 2
-            else
-                ConsolePrint("Max ability limit reached cannot receive any more abilities.")
-            end
+            ConsolePrint("Error too many abilities cannot receive anymore. Ability skipped "  .. value.Name)
         end
     end
-end
-
-function FindEmptyAbilitySlot (value, front)
-	while ReadShort(Save + value) ~= 0 do
-        value = value -2
-        if value <= front then
-            return value
-        end
-    end
-    return value
 end
 
 function ItemHandler:Request()
@@ -154,24 +103,18 @@ end
 
 function ItemHandler:RemoveAbilities()
    for slot, _ in pairs(SoraBufferSlots) do
-       if ReadShort(Save + slot) ~= 0 and not SoraBufferSlots[SoraCurrentAbilitySlot] and SoraCurrentAbilitySlot > SoraFront then
-           WriteShort(Save + SoraCurrentAbilitySlot, ReadShort(Save + slot))
+       if ReadShort(Save + slot) ~= 0 then
            WriteShort(Save + slot, 0)
-           SoraCurrentAbilitySlot = SoraCurrentAbilitySlot - 2
        end
    end
    for slot, _ in pairs(DonaldBufferSlots) do
-       if ReadShort(Save + slot) ~= 0 and not DonaldBufferSlots[DonaldCurrentAbilitySlot] and DonaldCurrentAbilitySlot > DonaldFront then
-           WriteShort(Save + DonaldCurrentAbilitySlot, ReadShort(Save + slot))
+       if ReadShort(Save + slot) ~= 0 then
            WriteShort(Save + slot, 0)
-           DonaldCurrentAbilitySlot = DonaldCurrentAbilitySlot - 2
        end
    end
    for slot, _ in pairs(GoofyBufferSlots) do
-       if ReadShort(Save + slot) ~= 0 and not GoofyBufferSlots[GoofyCurrentAbilitySlot] and GoofyCurrentAbilitySlot > GoofyFront then
-           WriteShort(Save + GoofyCurrentAbilitySlot, ReadShort(Save + slot))
+       if ReadShort(Save + slot) ~= 0 then
            WriteShort(Save + slot, 0)
-           GoofyCurrentAbilitySlot = GoofyCurrentAbilitySlot - 2
        end
    end
 end

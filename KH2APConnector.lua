@@ -76,6 +76,17 @@ LimitForm = {}
 MasterForm = {}
 FinalForm = {}
 SummonLevels = {}
+SoraAbilitiesReceived = {}
+--current is (level 1 growth - 1) since anytime you receive it it increments it by 1 including the first growth
+SoraGrowthReceived = {
+	["High Jump"] = {current = 0x05D, max = 0x061},
+	["Quick Run"] = {current = 0x061, max = 0x065},
+	["Dodge Roll"] = {current = 0x233, max = 0x237},
+	["Aerial Dodge"] = {current = 0x065, max = 0x069},
+	["Glide"] = {current = 0x069, max = 0x06D},
+}
+DonaldAbilitiesReceived = {}
+GoofyAbilitiesReceived = {}
 WeaponAbilities = {}
 FormWeaponAbilities = {}
 
@@ -317,6 +328,8 @@ function ProcessItemQueue()
 					end
 					ItemsReceived[item.Name] = math.max(0, math.min(TornPagesReceived - TornPagesRedeemed, 255))
 				end
+			else
+				ProcessAbility(item)
 			end
 			ItemHandler:Receive(item)
 			RoomSaveTask:StoreItem(item)
@@ -544,7 +557,21 @@ function sendToInv(item)
     ItemHandler:Receive(item)
 end
 
-function NotificationTest()
+function ProcessAbility(item)
+	if SoraGrowthReceived[item.Name] then
+		if SoraGrowthReceived[item.Name].current < SoraGrowthReceived[item.Name].max then
+			SoraGrowthReceived[item.Name].current = SoraGrowthReceived[item.Name].current + 1
+		end
+	elseif item.Ability == "Sora" then
+		table.insert(SoraAbilitiesReceived, item)
+	elseif item.Ability == "Donald" then
+		table.insert(DonaldAbilitiesReceived, item)
+	elseif item.Ability == "Goofy" then
+		table.insert(GoofyAbilitiesReceived, item)
+	end
+end
+
+function ProcessNotification()
 	if NotificationFrameCount == 0 and #NotificationMessage > 0 then
 		if SendNotificationType == "puzzle" then
 			if ReadByte(0x800000) == 0 then
@@ -656,7 +683,7 @@ function _OnFrame()
 		if not HandshakeReceived then
 			APCommunication()
 		else
-			NotificationTest()
+			ProcessNotification()
 			RoomSaveTask:GetRoomChange()
 			ItemHandler:RemoveAbilities()
 			if DeathlinkEnabled then
