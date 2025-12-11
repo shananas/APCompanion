@@ -22,7 +22,7 @@ function RoomSaveTask:GetRoomChange() --Determine if the room has changed
 
 	if self.State.SveRoom ~= currSve then
 		if #self.State.ItemIds > 0 then
-			ConsolePrint("Room changed")
+			ConsolePrint("Room changed items have been saved!?!")
 			self.State.CurrentRoom = currRoom
 			self.State.SveRoom = currSve
 			self:OnRoomChange()
@@ -34,7 +34,7 @@ function RoomSaveTask:GetRoomChange() --Determine if the room has changed
 		self:RestoreItems()
 		self.State.CurrentRoom = currRoom
 		HasDied = false
-	elseif self.State.CurrentRoom ~= currRoom then
+	elseif self.State.CurrentRoom ~= currRoom and ReadLong(ReadLong(PlayerGaugePointer)+0x88, true) ~= 0 then
 		self.State.CurrentRoom = currRoom
 		HasDied = false
 	end
