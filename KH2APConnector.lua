@@ -47,15 +47,16 @@ MessageTypes = {
 	WorldLocationChecked = 1,
 	LevelChecked = 2,
 	KeybladeChecked = 3,
-	Deathlink = 5,
-    SlotData = 6,
-    BountyList = 7,
-    ReceiveItem = 10,
-    RequestAllItems = 9,
-    Victory = 11,
+	SlotData = 4,
+	BountyList = 5,
+	Deathlink = 6,
+	NotificationType = 7,
+	NotificationSendMessage = 8,
+	NotificationReceiveMessage = 9,
+	ReceiveItem = 10,
+	RequestAllItems = 11,
 	Handshake  = 12,
-	NotificationType = 13,
-	NotificationMessage = 14,
+	Victory = 19,
 	Closed = 20
 }
 HandshakeSent = false
@@ -126,7 +127,8 @@ LastWorld = -1
 CurrentWorld = -1
 SendNotificationType = "none"
 ReceiveNotificationType = "none"
-NotificationMessage = {}
+NotificationSendMessage = {}
+NotificationReceiveMessage = {}
 
 
 -- ############################################################
@@ -254,8 +256,11 @@ function HandleMessage(msg)
 			ConsolePrint(msg[1].values)
 		end
 
-	elseif msg.type == MessageTypes.NotificationMessage then
-		table.insert(NotificationMessage, msg.values[1])
+	elseif msg.type == MessageTypes.NotificationSendMessage then
+		table.insert(NotificationSendMessage, msg.values[1])
+
+	elseif msg.type == MessageTypes.NotificationReceiveMessage then
+		table.insert(NotificationReceiveMessage, msg.values[1])
 
 	elseif msg.type == MessageTypes.Victory then
 		VictoryReceived = true
@@ -586,37 +591,70 @@ function ProcessAbility(item)
 end
 
 function ProcessNotification()
-	if NotificationFrameCount == 0 and #NotificationMessage > 0 then
-		if SendNotificationType == "puzzle" then
-			if ReadByte(0x800000) == 0 then
-				Notification = textToKHSCII(NotificationMessage[1])
-				WriteArray(0x800104, Notification)
-				ConsolePrint(tostring(NotificationMessage[1]))
-				for _,v in ipairs(Notification) do io.write(string.format("0x%02X ", v)) end print()
-				WriteByte(0x800000, 2)
-				table.remove(NotificationMessage,1)
-			end
-		elseif SendNotificationType == "info" then
-			InfoBarPointerRef = ReadLong(InfoBarPointer)
-			if ReadByte(0x800000) == 0 and InfoBarPointerRef ~= 0 and ReadInt(InfoBarPointerRef + 0x48) == 0 then
-				WriteByte(0x800000, 1)
-				Notification = textToKHSCII(NotificationMessage[1])
-				WriteArray(0x800004, Notification)
-				table.remove(NotificationMessage,1)
-			end
-		elseif SendNotificationType == "chest" then
-			if not ChestWait then
+	if NotificationFrameCount == 0 then
+		if #NotificationSendMessage > 0 then
+			if SendNotificationType == "puzzle" then
 				if ReadByte(0x800000) == 0 then
-					Notification = textToKHSCII(NotificationMessage[1])
-					WriteByte(0x800150, 0)
-					WriteArray(0x800154, Notification)
-					ChestWait = true
+					msg = textToKHSCII(NotificationSendMessage[1])
+					WriteArray(0x800104, msg)
+					ConsolePrint(tostring(NotificationSendMessage[1]))
+					WriteByte(0x800000, 2)
+					table.remove(NotificationSendMessage,1)
 				end
-			elseif ChestFrameCount == 0 then
-				WriteByte(0x800000, 3)
-				table.remove(NotificationMessage,1)
-				ChestWait = false
+			elseif SendNotificationType == "info" then
+				InfoBarPointerRef = ReadLong(InfoBarPointer)
+				if ReadByte(0x800000) == 0 and InfoBarPointerRef ~= 0 and ReadInt(InfoBarPointerRef + 0x48) == 0 then
+					WriteByte(0x800000, 1)
+					msg = textToKHSCII(NotificationSendMessage[1])
+					WriteArray(0x800004, msg)
+					table.remove(NotificationSendMessage,1)
+				end
+			elseif SendNotificationType == "chest" then
+				if not ChestWait then
+					if ReadByte(0x800000) == 0 then
+						msg = textToKHSCII(NotificationSendMessage[1])
+						WriteByte(0x800150, 0)
+						WriteArray(0x800154, msg)
+						ChestWait = true
+					end
+				elseif ChestFrameCount == 0 then
+					WriteByte(0x800000, 3)
+					table.remove(NotificationSendMessage,1)
+					ChestWait = false
+				end
 			end
+		elseif #NotificationReceiveMessage > 0 then
+			if ReceiveNotificationType == "puzzle" then
+				if ReadByte(0x800000) == 0 then
+					msg = textToKHSCII(NotificationReceiveMessage[1])
+					WriteArray(0x800104, msg)
+					ConsolePrint(tostring(NotificationReceiveMessage[1]))
+					WriteByte(0x800000, 2)
+					table.remove(NotificationReceiveMessage,1)
+				end
+			elseif ReceiveNotificationType == "info" then
+				InfoBarPointerRef = ReadLong(InfoBarPointer)
+				if ReadByte(0x800000) == 0 and InfoBarPointerRef ~= 0 and ReadInt(InfoBarPointerRef + 0x48) == 0 then
+					WriteByte(0x800000, 1)
+					msg = textToKHSCII(NotificationReceiveMessage[1])
+					WriteArray(0x800004, msg)
+					table.remove(NotificationReceiveMessage,1)
+				end
+			elseif ReceiveNotificationType == "chest" then
+				if not ChestWait then
+					if ReadByte(0x800000) == 0 then
+						msg = textToKHSCII(NotificationReceiveMessage[1])
+						WriteByte(0x800150, 0)
+						WriteArray(0x800154, msg)
+						ChestWait = true
+					end
+				elseif ChestFrameCount == 0 then
+					WriteByte(0x800000, 3)
+					table.remove(NotificationReceiveMessage,1)
+					ChestWait = false
+				end
+			end
+
 		end
 	end
 end
