@@ -29,7 +29,20 @@ ChestWait = false
 
 local client
 
-special_dict = {
+kh2scii_dict = {
+	 ['a'] = 0x9A, ['b'] = 0x9B, ['c'] = 0x9C, ['d'] = 0x9D, ['e'] = 0x9E, ['f'] = 0x9F, ['g'] = 0xA0, ['h'] = 0xA1,
+	 ['i'] = 0xA2, ['j'] = 0xA3, ['k'] = 0xA4, ['l'] = 0xA5, ['m'] = 0xA6, ['n'] = 0xA7, ['o'] = 0xA8, ['p'] = 0xA9,
+	 ['q'] = 0xAA, ['r'] = 0xAB, ['s'] = 0xAC, ['t'] = 0xAD, ['u'] = 0xAE, ['v'] = 0xAF, ['w'] = 0xB0, ['x'] = 0xB1,
+	 ['y'] = 0xB2, ['z'] = 0xB3,
+
+	 ['A'] = 0x2E, ['B'] = 0x2F, ['C'] = 0x30, ['D'] = 0x31, ['E'] = 0x32, ['F'] = 0x33,
+	 ['G'] = 0x34, ['H'] = 0x35, ['I'] = 0x36, ['J'] = 0x37, ['K'] = 0x38, ['L'] = 0x39, ['M'] = 0x3A, ['N'] = 0x3B,
+	 ['O'] = 0x3C, ['P'] = 0x3D, ['Q'] = 0x3E, ['R'] = 0x3F, ['S'] = 0x40, ['T'] = 0x41, ['U'] = 0x42, ['V'] = 0x43,
+	 ['W'] = 0x44, ['X'] = 0x45, ['Y'] = 0x46, ['Z'] = 0x47,
+
+	 ['1'] = 0x91, ['2'] = 0x92, ['3'] = 0x93, ['4'] = 0x94,
+	 ['5'] = 0x95, ['6'] = 0x96, ['7'] = 0x97, ['8'] = 0x98, ['9'] = 0x99,
+
 	 [' '] = 0x01, ['\n'] = 0x02, ['-'] = 0x54, ['!']  = 0x48, ['?']  = 0x49, ['%'] = 0x4A, ['/'] = 0x4B,
 	 ['.'] = 0x4F, [',']  = 0x50, [';'] = 0x51, [' ='] = 0x52, ['\''] = 0x57, ['('] = 0x5A, [')'] = 0x5B,
 	 ['['] = 0x62, [']']  = 0x63, ['à'] = 0xB7, ['á']  = 0xB8, ['â']  = 0xB9, ['ä'] = 0xBA, ['è'] = 0xBB,
@@ -38,7 +51,7 @@ special_dict = {
 	 ['û'] = 0xCA, ['ü']  = 0xCB, ['ç'] = 0xE8, ['À']  = 0xD0, ['Á']  = 0xD1, ['Â'] = 0xD2, ['Ä'] = 0xD3,
 	 ['È'] = 0xD4, ['É']  = 0xD5, ['Ê'] = 0xD6, ['Ë']  = 0xD7, ['Ì']  = 0xD8, ['Í'] = 0xD9, ['Î'] = 0xDA,
 	 ['Ï'] = 0xDB, ['Ñ']  = 0xDC, ['Ò'] = 0xDD, ['Ó']  = 0xDE, ['Ô']  = 0xDF, ['Ö'] = 0xE0, ['Ù'] = 0xE1,
-	 ['Ú'] = 0xE2, ['Û']  = 0xE3, ['Ü'] = 0xE4, ['¡']  = 0xE5, ['¿']  = 0xE6, ['Ç'] = 0xE7
+	 ['Ú'] = 0xE2, ['Û']  = 0xE3, ['Ü'] = 0xE4, ['¡']  = 0xE5, ['¿']  = 0xE6, ['Ç'] = 0xE7,
 }
 
 MessageTypes = {
@@ -327,7 +340,7 @@ function ProcessItemQueue()
 		local item = ItemQueue[1]
 		if ReadByte(Pause) == 0  and ReadByte(FadeStatus) == 0 and
 		ReadLong(PlayerGaugePointer) ~= 0 and ReadLong(ReadLong(PlayerGaugePointer)+0x88, true) ~= 0 then
-			if item.Ability == "false" then
+			if item.Type ~= "Ability" then
 				ConsolePrint(tostring(item.Name))
 				if item.Name ~= "Torn Page" then
 					if ItemsReceived[item.Name] then
@@ -407,16 +420,7 @@ function textToKHSCII(value)
 	while i <= #value do
 		local c = value:sub(i, i)
 		local charCode = nil
-		if 'a' <= c and c <= 'z' then
-			charCode = string.byte(c) + 0x39
-			i = i + 1
-		elseif 'A' <= c and c <= 'Z' then
-			charCode = string.byte(c) - 0x13
-			i = i + 1
-		elseif '0' <= c and c <= '9' then
-			charCode = string.byte(c) + 0x60
-			i = i + 1
-		elseif c == '{' then
+		if c == '{' then
 			local command = value:sub(i, i + 5)
 			if command:match("^%{0x[%da-fA-F][%da-fA-F]%}$") then
 			    local hexVal = command:sub(2, 5)
@@ -426,14 +430,13 @@ function textToKHSCII(value)
 			    i = i + 1  -- not a valid command, just move forward
 			end
 		else
-			if special_dict[c] then
-				charCode = special_dict[c]
+			if kh2scii_dict[c] then
+				charCode = kh2scii_dict[c]
 			else
 				charCode = 0x01
 			end
 			i = i + 1
 		end
-
 		if charCode ~= nil then
 			table.insert(returnArr, charCode)
 		else
