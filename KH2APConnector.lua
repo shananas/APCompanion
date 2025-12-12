@@ -22,6 +22,7 @@ local connectionInitialized = false
 
 frameCount = 0
 NotificationFrameCount = 0
+VictoryWaitTime = 0
 ChestFrameCount = 0
 connected = false
 ChestWait = false
@@ -107,7 +108,6 @@ Goal = -1
 LuckyEmblemsRequired = 100
 BountyRequired = 100
 BountiesFinished = 0
-finished = false
 BountyBosses = {}
 FormSummonLevels = {
 	0x32F6,
@@ -119,6 +119,8 @@ FormSummonLevels = {
 }
 DeathlinkEnabled = false
 RecievedDeath = false
+VictorySent = false
+VictoryReceived = false
 LastReceivedIndex = -1
 LastWorld = -1
 CurrentWorld = -1
@@ -255,6 +257,9 @@ function HandleMessage(msg)
 	elseif msg.type == MessageTypes.NotificationMessage then
 		table.insert(NotificationMessage, msg.values[1])
 
+	elseif msg.type == MessageTypes.Victory then
+		VictoryReceived = true
+
 	end
 end
 
@@ -282,25 +287,33 @@ function ReceiveFromApClient()
 
 			if newMessage.type == MessageTypes.Closed then
 				ConsolePrint("Server closed resetting client")
-				connectionInitialized = false
-				gameStarted = false
-				HandshakeSent = false
-				HandshakeReceived = false
-				client:close()
-				client = socket.tcp()
-				client:settimeout(0)
+				CloseConnection()
 				return
 			end
 			return newMessage
 		elseif partial and #partial > 0 then
 			receiveBuffer = receiveBuffer .. partial
-			ConsolePrint("partial")
-		elseif err  and err ~= "timeout" then
+			ConsolePrint("Partial message received")
+		elseif err and err ~= "timeout" then
 			ConsolePrint("Error receiving message: " .. err)
+			if err == "timeout" then
+				ConsolPrint("Lost connection to client please relaunch KH2Client")
+				CloseConnection()
+			end
 		end
 	else
 		return nil
 	end
+end
+
+function CloseConnection()
+	connectionInitialized = false
+	gameStarted = false
+	HandshakeSent = false
+	HandshakeReceived = false
+	client:close()
+	client = socket.tcp()
+	client:settimeout(0)
 end
 
 function ProcessItemQueue()
@@ -438,12 +451,12 @@ function GoalGame()
         if ReadByte(Save + 0x36B2) > 0 and ReadByte(Save + 0x36B3) > 0 and ReadByte(Save + 0x36B4) > 0 then
             if FinalXemnasRequired then
                 if FinalXemnasBeaten then
-					SendToApClient(MessageTypes.Victory, {"Game Completed"})
-					finished = true
+					SendToApClient(MessageTypes.Victory, {"Victory"})
+					VictorySent = true
 				end
 			else
-				SendToApClient(MessageTypes.Victory, {"Game Completed"})
-				finished = true
+				SendToApClient(MessageTypes.Victory, {"Victory"})
+				VictorySent = true
 			end
 		end
     elseif Goal == 1 then
@@ -455,17 +468,17 @@ function GoalGame()
 			end
             if FinalXemnasRequired then
                 if FinalXemnasBeaten then
-					SendToApClient(MessageTypes.Victory, {"Game Completed"})
-					finished = true
+					SendToApClient(MessageTypes.Victory, {"Victory"})
+					VictorySent = true
 				end
 			else
-				SendToApClient(MessageTypes.Victory, {"Game Completed"})
-				finished = true
+				SendToApClient(MessageTypes.Victory, {"Victory"})
+				VictorySent = true
 			end
 		end
     elseif Goal == 2 then
 		CheckBountiesObtained()
-        if BountiesFinished > BountyRequired then
+        if BountiesFinished >= BountyRequired then
             if ReadByte(Save + 0x36B3) < 1 then
                 WriteByte(Save + 0x36B2, 1)
                 WriteByte(Save + 0x36B3, 1)
@@ -473,17 +486,17 @@ function GoalGame()
 			end
             if FinalXemnasRequired then
                 if FinalXemnasBeaten then
-					SendToApClient(MessageTypes.Victory, {"Game Completed"})
-					finished = true
+					SendToApClient(MessageTypes.Victory, {"Victory"})
+					VictorySent = true
                 end
 			else
-				SendToApClient(MessageTypes.Victory, {"Game Completed"})
-				finished = true
+				SendToApClient(MessageTypes.Victory, {"Victory"})
+				VictorySent = true
 			end
 		end
     elseif Goal == 3 then
 		CheckBountiesObtained()
-        if BountiesFinished > BountyRequired and ReadByte(Save + 0x3641) >= LuckyEmblemsRequired then
+        if BountiesFinished >= BountyRequired and ReadByte(Save + 0x3641) >= LuckyEmblemsRequired then
             if ReadByte(Save + 0x36B3) < 1 then
                 WriteByte(Save + 0x36B2, 1)
                 WriteByte(Save + 0x36B3, 1)
@@ -491,12 +504,12 @@ function GoalGame()
 			end
             if FinalXemnasRequired then
                 if FinalXemnasBeaten then
-					SendToApClient(MessageTypes.Victory, {"Game Completed"})
-					finished = true
+					SendToApClient(MessageTypes.Victory, {"Victory"})
+					VictorySent = true
                 end
 			else
-				SendToApClient(MessageTypes.Victory, {"Game Completed"})
-				finished = true
+				SendToApClient(MessageTypes.Victory, {"Victory"})
+				VictorySent = true
 			end
         end
 	end
@@ -617,8 +630,10 @@ function APCommunication()
 	LocationHandler:CheckLevelLocations()
 	LocationHandler:CheckWeaponAbilities()
 	LocationHandler:CheckWorldLocations()
-	if not finished then
+	if not VictorySent then
 		GoalGame()
+	elseif not VictoryReceived and VictoryWaitTime == 0 then
+		SendToApClient(MessageTypes.Victory, {"Victory"})
 	end
 
 	while true do
@@ -661,8 +676,11 @@ function _OnFrame()
 	end
 	frameCount = (frameCount + 1) % 15
 	NotificationFrameCount = (NotificationFrameCount + 1) % 30 --IF I CHANGE THIS CHECK CHEST NOTIFICATION WAIT TIME CASUE IT'LL NEED TO BE UPDATED
+	if VictorySent then
+		VictoryWaitTime = (VictoryWaitTime + 1) % 300
+	end
 	if ChestWait then
-		ChestFrameCount = (ChestFrameCount + 1) % 60
+		ChestFrameCount = (ChestFrameCount + 1) % 30
 	end
 	if not gameStarted and frameCount == 0 then
 		local connected =  ConnectToApClient()
