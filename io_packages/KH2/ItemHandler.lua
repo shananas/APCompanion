@@ -40,8 +40,8 @@ function ItemHandler:Receive(item)
 end
 
 function ItemHandler:GiveItem(value)
-    if value.Bitmask ~= null then
-        WriteByte(Save + value.Address, ItemsReceived[value.Name]| 0x01 <<value.Bitmask)
+    if value.Bitmask ~= nil then
+        WriteByte(Save + value.Address, ReadByte(Save + value.Address) | 0x01 <<value.Bitmask)
     else
         if SoraWeaponIDs[value.ID] then
             WriteByte(Save + value.Address, ItemsReceived[value.Name])
