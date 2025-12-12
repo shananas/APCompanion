@@ -73,7 +73,7 @@ function ItemHandler:GiveAbility(value)
             local equipped = ReadShort(Save + GlideSlot) & 0x8000
             WriteShort(Save + GlideSlot, SoraGrowthReceived[value.Name].current | equipped)
         else
-            local slot = SoraBack -(#SoraAbilitiesReceived - 1) * 2
+            local slot = SoraBack - (#SoraAbilitiesReceived - 1) * 2
             if not SoraBufferSlots[slot] then
                 WriteShort(Save + slot, value.Address)
             else
@@ -81,14 +81,14 @@ function ItemHandler:GiveAbility(value)
             end
         end
     elseif value.Ability == "Donald" then
-        local slot = DonaldBack -(#DonaldAbilitiesReceived - 1) * 2
+        local slot = DonaldBack - (#DonaldAbilitiesReceived - 1) * 2
         if not DonaldBufferSlots[slot] then
             WriteShort(Save + slot, value.Address)
         else
             ConsolePrint("Error too many abilities cannot receive anymore. Ability skipped "  .. value.Name)
         end
     elseif value.Ability == "Goofy" then
-        local slot = GoofyBack -(#GoofyAbilitiesReceived - 1) * 2
+        local slot = GoofyBack - (#GoofyAbilitiesReceived - 1) * 2
         if not GoofyBufferSlots[slot] then
             WriteShort(Save + slot, value.Address)
         else

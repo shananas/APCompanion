@@ -23,7 +23,7 @@ function ItemDefs:DefineItems()
         {ID = 595, Name = "Proof of Peace",           Ability = "false", Address = 0x36B4},
         {ID = 524, Name = "Promise Charm",            Ability = "false", Address = 0x3694},
         {ID = 368, Name = "Namine Sketches",          Ability = "false", Address = 0x3642},
-        {ID = 460, Name = "Royal Summons",             Ability = "false", Address = 0x365D}, --dummy 13
+        {ID = 460, Name = "Royal Summons",            Ability = "false", Address = 0x365D}, --dummy 13
         {ID = 54,  Name = "Battlefields of War",      Ability = "false", Address = 0x35AE},
         {ID = 55,  Name = "Sword of the Ancestor",    Ability = "false", Address = 0x35AF},
         {ID = 59,  Name = "Beast's Claw",             Ability = "false", Address = 0x35B3},
