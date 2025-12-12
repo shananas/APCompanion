@@ -219,9 +219,9 @@ function ItemDefs:DefineAbilities()
         --Movement
         {ID = 94,  Name = "High Jump",             Ability = "Sora", Address = 0x05E},
         {ID = 98,  Name = "Quick Run",             Ability = "Sora", Address = 0x062},
-        {ID = 564, Name = "Aerial Dodge",          Ability = "Sora", Address = 0x234},
-        {ID = 102, Name = "Glide",                 Ability = "Sora", Address = 0x066},
-        {ID = 106, Name = "Dodge Roll",            Ability = "Sora", Address = 0x06A},
+        {ID = 564, Name = "Dodge Roll",            Ability = "Sora", Address = 0x234},
+        {ID = 102, Name = "Aerial Dodge",          Ability = "Sora", Address = 0x066},
+        {ID = 106, Name = "Glide",                 Ability = "Sora", Address = 0x06A},
 
         --Support Abilities
         {ID = 138, Name = "Scan",                  Ability = "Sora", Address = 0x08A},
