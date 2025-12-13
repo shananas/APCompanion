@@ -261,10 +261,8 @@ function HandleMessage(msg)
 	elseif msg.type == MessageTypes.NotificationType then
 		if msg.values[1] == "receive" then
 			ReceiveNotificationType = msg.values[2]
-			ConsolePrint(ReceiveNotificationType)
 		elseif msg.values[1] == "send" then
 			SendNotificationType = msg.values[2]
-			ConsolePrint(SendNotificationType)
 		end
 
 	elseif msg.type == MessageTypes.NotificationSendMessage then
@@ -602,7 +600,6 @@ function ProcessNotification()
 				if ReadByte(0x800000) == 0 then
 					msg = textToKHSCII(NotificationSendMessage[1])
 					WriteArray(0x800104, msg)
-					ConsolePrint(tostring(NotificationSendMessage[1]))
 					WriteByte(0x800000, 2)
 					table.remove(NotificationSendMessage,1)
 				end
@@ -633,7 +630,6 @@ function ProcessNotification()
 				if ReadByte(0x800000) == 0 then
 					msg = textToKHSCII(NotificationReceiveMessage[1])
 					WriteArray(0x800104, msg)
-					ConsolePrint(tostring(NotificationReceiveMessage[1]))
 					WriteByte(0x800000, 2)
 					table.remove(NotificationReceiveMessage,1)
 				end
