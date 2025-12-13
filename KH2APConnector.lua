@@ -575,8 +575,12 @@ function Deathlink()
 end
 
 ----This function is needed for room save to work
-function sendToInv(item)
+function SendToInv(item)
     ItemHandler:Receive(item)
+end
+
+function StoreChest(item)
+	RoomSaveTask:StoreLocation(item)
 end
 
 function ProcessAbility(item)

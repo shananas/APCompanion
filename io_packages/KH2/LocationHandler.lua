@@ -34,7 +34,7 @@ function LocationHandler:CheckWorldLocations()
             if not contained and ReadByte(Save + checks[i].Address) & 0x1 << checks[i].BitIndex > 0 then
                 table.insert(LocationsChecked, checks[i].Name)
                 if checks[i].Chest then
-                    --RoomSaveTask:StoreItem(checks[i])
+                    StoreChest(checks[i])
                 end
                 SendToApClient(MessageTypes.WorldLocationChecked, {checks[i].Name})
             end
