@@ -265,8 +265,6 @@ function HandleMessage(msg)
 		elseif msg.values[1] == "send" then
 			SendNotificationType = msg.values[2]
 			ConsolePrint(SendNotificationType)
-		else
-			ConsolePrint(msg[1].values)
 		end
 
 	elseif msg.type == MessageTypes.NotificationSendMessage then
