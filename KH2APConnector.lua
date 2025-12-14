@@ -262,20 +262,14 @@ function HandleMessage(msg)
 	end
 end
 
-local receiveBuffer = ""
 local buildingMessage = ""
 function ReceiveFromApClient()
     if not client then return {} end
 
 	local messages = {}
 	while true do
-		local message, err, partial = client:receive("*l")
+		local message, err = client:receive("*l")
 		if message and message ~= "" then
-
-			if receiveBuffer ~= "" then
-				message = receiveBuffer .. message
-				receiveBuffer = ""
-            end
 
 			if buildingMessage ~= "" then
 				message = buildingMessage .. message
@@ -311,8 +305,6 @@ function ReceiveFromApClient()
 
 				table.insert(messages, newMessage)
 			end
-		elseif partial and #partial > 0 then
-			receiveBuffer = receiveBuffer .. partial
 		else
 			if err and err ~= "timeout" and err ~= "wantread" then
 				ConsolePrint("Error receiving message: " .. err)
