@@ -64,8 +64,7 @@ MessageTypes = {
 	BountyList = 5,
 	Deathlink = 6,
 	NotificationType = 7,
-	NotificationSendMessage = 8,
-	NotificationReceiveMessage = 9,
+	NotificationMessage = 8,
 	ReceiveItem = 10,
 	RequestAllItems = 11,
 	Handshake  = 12,
@@ -140,8 +139,7 @@ LastWorld = -1
 CurrentWorld = -1
 SendNotificationType = "none"
 ReceiveNotificationType = "none"
-NotificationSendMessage = {}
-NotificationReceiveMessage = {}
+NotificationMessage = {}
 
 
 -- ############################################################
@@ -176,16 +174,6 @@ function SendToApClient(type,messages)
 		ConsolePrint("Sending message:" .. message)
 		client:send(message)
 	end
-end
-
-function SocketHasMessages()
-	if client then
-		local ready = socket.select({client}, nil, 0)
-		if #ready > 0 then
-			return true
-		end
-	end
-	return false
 end
 
 function HandleMessage(msg)
@@ -259,17 +247,14 @@ function HandleMessage(msg)
 		end
 
 	elseif msg.type == MessageTypes.NotificationType then
-		if msg.values[1] == "receive" then
+		if msg.values[1] == "R" then
 			ReceiveNotificationType = msg.values[2]
-		elseif msg.values[1] == "send" then
+		elseif msg.values[1] == "S" then
 			SendNotificationType = msg.values[2]
 		end
 
-	elseif msg.type == MessageTypes.NotificationSendMessage then
-		table.insert(NotificationSendMessage, msg.values[1])
-
-	elseif msg.type == MessageTypes.NotificationReceiveMessage then
-		table.insert(NotificationReceiveMessage, msg.values[1])
+	elseif msg.type == MessageTypes.NotificationMessage then
+		table.insert(NotificationMessage, { msg.values[1], msg.values[2] })
 
 	elseif msg.type == MessageTypes.Victory then
 		VictoryReceived = true
@@ -278,46 +263,66 @@ function HandleMessage(msg)
 end
 
 local receiveBuffer = ""
-
+local buildingMessage = ""
 function ReceiveFromApClient()
-	if SocketHasMessages() then
-		local message, err, partial = client:receive('*l')
-		if message then
+    if not client then return {} end
+
+	local messages = {}
+	while true do
+		local message, err, partial = client:receive("*l")
+		if message and message ~= "" then
+
 			if receiveBuffer ~= "" then
 				message = receiveBuffer .. message
 				receiveBuffer = ""
-			end
-			ConsolePrint("Full message received: "..message)
-			local parts = SplitString(message, ";")
-			local type = tonumber(parts[1])
-			local newMessage = {
-				type = GetMessageType(type),
-				values = {}
-			}
+            end
 
-			for i = 2, #parts do
-				table.insert(newMessage.values, parts[i])
+			if buildingMessage ~= "" then
+				message = buildingMessage .. message
+				buildingMessage = ""
 			end
 
-			if newMessage.type == MessageTypes.Closed then
-				ConsolePrint("Server closed resetting client")
-				CloseConnection()
-				return
+            local isWait = message:sub(-4) == ";MOR"
+            local isFin = message:sub(-4) == ";FIN"
+            if isWait then
+                buildingMessage = message:sub(1, -5)
+            elseif isFin then
+                message = message:sub(1, -5)
+            end
+
+			if not isWait then
+				ConsolePrint("Full message received: " .. message)
+				local parts = SplitString(message, ";")
+				local type = tonumber(parts[1])
+				local newMessage = {
+				    type = GetMessageType(type),
+				    values = {}
+				}
+
+				for i = 2, #parts do
+				    table.insert(newMessage.values, parts[i])
+				end
+
+				if newMessage.type == MessageTypes.Closed then
+				    ConsolePrint("Server closed resetting client")
+				    CloseConnection()
+				    return {}
+				end
+
+				table.insert(messages, newMessage)
 			end
-			return newMessage
 		elseif partial and #partial > 0 then
 			receiveBuffer = receiveBuffer .. partial
-			ConsolePrint("Partial message received")
-		elseif err and err ~= "timeout" then
-			ConsolePrint("Error receiving message: " .. err)
-			if err == "timeout" then
-				ConsolPrint("Lost connection to client please relaunch KH2Client")
+		else
+			if err and err ~= "timeout" and err ~= "wantread" then
+				ConsolePrint("Error receiving message: " .. err)
 				CloseConnection()
 			end
+			break
 		end
-	else
-		return nil
 	end
+
+    return messages
 end
 
 function CloseConnection()
@@ -415,7 +420,7 @@ function textToKHSCII(value)
 	local i = 1
 	while i <= #value do
 		local c = value:sub(i, i)
-		local charCode = nil
+		local charCode
 		if c == '{' then
 			local command = value:sub(i, i + 5)
 			if command:match("^%{0x[%da-fA-F][%da-fA-F]%}$") then
@@ -426,17 +431,12 @@ function textToKHSCII(value)
 			    i = i + 1  -- not a valid command, just move forward
 			end
 		else
-			if kh2scii_dict[c] then
-				charCode = kh2scii_dict[c]
-			else
-				charCode = 0x01
-			end
+			charCode = kh2scii_dict[c] or 0x01
 			i = i + 1
 		end
-		if charCode ~= nil then
+
+		if charCode then
 			table.insert(returnArr, charCode)
-		else
-			i = i + 1
 		end
 	end
 	table.insert(returnArr, 0x00)
@@ -594,68 +594,54 @@ function ProcessAbility(item)
 end
 
 function ProcessNotification()
-	if NotificationFrameCount == 0 then
-		if #NotificationSendMessage > 0 then
-			if SendNotificationType == "puzzle" then
-				if ReadByte(0x800000) == 0 then
-					msg = textToKHSCII(NotificationSendMessage[1])
-					WriteArray(0x800104, msg)
-					WriteByte(0x800000, 2)
-					table.remove(NotificationSendMessage,1)
-				end
-			elseif SendNotificationType == "info" then
-				InfoBarPointerRef = ReadLong(InfoBarPointer)
-				if ReadByte(0x800000) == 0 and InfoBarPointerRef ~= 0 and ReadInt(InfoBarPointerRef + 0x48) == 0 then
-					WriteByte(0x800000, 1)
-					msg = textToKHSCII(NotificationSendMessage[1])
-					WriteArray(0x800004, msg)
-					table.remove(NotificationSendMessage,1)
-				end
-			elseif SendNotificationType == "chest" then
-				if not ChestWait then
-					if ReadByte(0x800000) == 0 then
-						msg = textToKHSCII(NotificationSendMessage[1])
-						WriteByte(0x800150, 0)
-						WriteArray(0x800154, msg)
-						ChestWait = true
-					end
-				elseif ChestFrameCount == 0 then
-					WriteByte(0x800000, 3)
-					table.remove(NotificationSendMessage,1)
-					ChestWait = false
-				end
+	if NotificationFrameCount == 0 and #NotificationMessage > 0 then
+		if not ChestWait then
+			if type(NotificationMessage[1]) ~= "table" or type(NotificationMessage[1][1]) ~= "string" or type(NotificationMessage[1][2]) ~= "string" then
+				ConsolePrint("Bad NotificationMessage entry removing")
+				table.remove(NotificationMessage, 1)
+				return
 			end
-		elseif #NotificationReceiveMessage > 0 then
-			if ReceiveNotificationType == "puzzle" then
-				if ReadByte(0x800000) == 0 then
-					msg = textToKHSCII(NotificationReceiveMessage[1])
-					WriteArray(0x800104, msg)
-					WriteByte(0x800000, 2)
-					table.remove(NotificationReceiveMessage,1)
-				end
-			elseif ReceiveNotificationType == "info" then
-				InfoBarPointerRef = ReadLong(InfoBarPointer)
-				if ReadByte(0x800000) == 0 and InfoBarPointerRef ~= 0 and ReadInt(InfoBarPointerRef + 0x48) == 0 then
-					WriteByte(0x800000, 1)
-					msg = textToKHSCII(NotificationReceiveMessage[1])
-					WriteArray(0x800004, msg)
-					table.remove(NotificationReceiveMessage,1)
-				end
-			elseif ReceiveNotificationType == "chest" then
-				if not ChestWait then
-					if ReadByte(0x800000) == 0 then
-						msg = textToKHSCII(NotificationReceiveMessage[1])
-						WriteByte(0x800150, 0)
-						WriteArray(0x800154, msg)
-						ChestWait = true
-					end
-				elseif ChestFrameCount == 0 then
-					WriteByte(0x800000, 3)
-					table.remove(NotificationReceiveMessage,1)
-					ChestWait = false
-				end
+			if NotificationMessage[1][1] ~= "S" and NotificationMessage[1][1] ~= "R" then
+				ConsolePrint("Unknown notification type removing entry")
+				table.remove(NotificationMessage, 1)
+				return
 			end
+		end
+		local NotifType
+		if NotificationMessage[1][1]  == "S" then
+			NotifType = SendNotificationType
+		elseif NotificationMessage[1][1]  == "R" then
+			NotifType = ReceiveNotificationType
+		end
 
+		if NotifType == "chest" then
+			if not ChestWait then
+				if ReadByte(0x800000) == 0 then
+					local msg = textToKHSCII(NotificationMessage[1][2])
+					WriteByte(0x800150, 0)
+					WriteArray(0x800154, msg)
+					ChestWait = true
+				end
+			elseif ChestFrameCount == 0 then
+				WriteByte(0x800000, 3)
+				table.remove(NotificationMessage,1)
+				ChestWait = false
+			end
+		elseif NotifType == "puzzle" then
+			if ReadByte(0x800000) == 0 then
+				local msg = textToKHSCII(NotificationMessage[1][2])
+				WriteArray(0x800104, msg)
+				WriteByte(0x800000, 2)
+				table.remove(NotificationMessage,1)
+			end
+		elseif NotifType == "info" then
+			local InfoBarPointerRef = ReadLong(InfoBarPointer)
+			if ReadByte(0x800000) == 0 and InfoBarPointerRef ~= 0 and ReadInt(InfoBarPointerRef + 0x48) == 0 then
+				WriteByte(0x800000, 1)
+				local msg = textToKHSCII(NotificationMessage[1][2])
+				WriteArray(0x800004, msg)
+				table.remove(NotificationMessage,1)
+			end
 		end
 	end
 end
@@ -664,7 +650,9 @@ end
 -- ######################  Game Setup  ########################
 -- ############################################################
 
+local MessageLimit = 1000
 function APCommunication()
+    local MessagesProcessed = 0
 	CurrentWorldLocation()
 	LocationHandler:CheckLevelLocations()
 	LocationHandler:CheckWeaponAbilities()
@@ -675,10 +663,13 @@ function APCommunication()
 		SendToApClient(MessageTypes.Victory, {"Victory"})
 	end
 
-	while true do
-        local msg = ReceiveFromApClient()
-        if not msg then break end
-        HandleMessage(msg)
+    local messages = ReceiveFromApClient()
+    for i = 1, #messages do
+        HandleMessage(messages[i])
+        MessagesProcessed = MessagesProcessed + 1
+		if MessagesProcessed > MessageLimit then
+			break
+		end
     end
 end
 
@@ -713,13 +704,15 @@ function _OnFrame()
 		PrevPlace = ReadShort(Now+0x30)
 		ARD = ReadLong(ARDPointer)
 	end
-	frameCount = (frameCount + 1) % 15
+	if not gameStarted then
+		frameCount = (frameCount + 1) % 15
+	end
 	NotificationFrameCount = (NotificationFrameCount + 1) % 30 --IF I CHANGE THIS CHECK CHEST NOTIFICATION WAIT TIME CASUE IT'LL NEED TO BE UPDATED
 	if VictorySent then
 		VictoryWaitTime = (VictoryWaitTime + 1) % 300
 	end
 	if ChestWait then
-		ChestFrameCount = (ChestFrameCount + 1) % 30
+		ChestFrameCount = (ChestFrameCount + 1) % 60
 	end
 	if not gameStarted and frameCount == 0 then
 		local connected =  ConnectToApClient()
@@ -746,10 +739,8 @@ function _OnFrame()
 			if DeathlinkEnabled then
 				Deathlink()
 			end
-			if frameCount == 0 then --Dont run main logic every frame
-				APCommunication()
-				ProcessItemQueue()
-			end
+			APCommunication()
+			ProcessItemQueue()
 		end
 	end
 end
