@@ -24,6 +24,7 @@ local APCommunicationTime
 local NotificationTime
 local ChestDelay
 local VictoryDelay
+local VerifyDelay
 local TimeOffset
 connected = false
 ChestWait = false
@@ -141,6 +142,12 @@ CurrentWorld = -1
 SendNotificationType = "none"
 ReceiveNotificationType = "none"
 NotificationMessage = {}
+SellableItems = {}
+SoldItems = {}
+local ShopState = {
+	Active = false,
+	Sellable_Snapshot = {},
+}
 
 
 -- ############################################################
@@ -648,6 +655,35 @@ function ProcessNotification()
 	end
 end
 
+function IsInShop()
+	local JournalValue = ReadShort(Journal)
+	local ShopValue = ReadShort(Shop)
+	local InShop = (JournalValue ~= -1 and ShopValue == 5) or (JournalValue == -1 and ShopValue == 10)
+
+	if InShop and not ShopState.Active then
+		ConsolePrint("entered shop")
+		ShopState.Active = true
+		ShopState.Sellable_Snapshot = {}
+		for i = 1, #SellableItems do
+			local Amount = ReadByte(Save + SellableItems[i].Address)
+			ShopState.Sellable_Snapshot[SellableItems[i].Name] = Amount
+			ConsolePrint(SellableItems[i].Name .. " = " .. tostring(ShopState.Sellable_Snapshot[SellableItems[i].Name]))
+		end
+	elseif not InShop and ShopState.Active then
+		ConsolePrint("left shop")
+		for i = 1, #SellableItems do
+			local item = SellableItems[i]
+			local BeforeShop = ShopState.Sellable_Snapshot[item.Name] or 0
+			local AfterShop = ReadByte(Save + item.Address)
+			SoldItems[item.Name] = (SoldItems[item.Name] or 0) + (BeforeShop - AfterShop)
+			ConsolePrint(item.Name .. " = " .. tostring(SoldItems[item.Name]))
+		end
+
+		ShopState.Active = false
+		ShopState.Sellable_Snapshot = {}
+	end
+end
+
 -- ############################################################
 -- ######################  Game Setup  ########################
 -- ############################################################
@@ -684,6 +720,7 @@ function _OnInit()
 	LocationDefs:TornPageLocks()
 	ItemDefs:DefineItems()
 	ItemDefs:DefineAbilities()
+	ItemDefs:SellableItems()
 	GameVersion = 0
 	print('Lua Socket test')
 	client = socket.tcp()
@@ -693,6 +730,7 @@ function _OnInit()
 	NotificationTime = os.clock()
 	ChestDelay = os.clock()
 	VictoryDelay = os.clock()
+	VerifyDelay = os.clock()
 end
 
 function _OnFrame()
@@ -722,6 +760,7 @@ function _OnFrame()
 		APCommunicationTime = TimeOffset
 		return
 	end
+	IsInShop()
 	PCInteracted = ReadByte(Save + 0x1D27) & 0x1 << 3 > 0
 	if gameStarted and PCInteracted then
 		if not HandshakeSent then
@@ -732,12 +771,16 @@ function _OnFrame()
 		if not HandshakeReceived then
 			APCommunication()
 		else
-			if TimeOffset - NotificationTime >= 1.0 then
+			RoomSaveTask:GetRoomChange()
+			ItemHandler:RemoveAbilities()
+			if TimeOffset - NotificationTime >= 10 then
 				ProcessNotification()
 				NotificationTime = TimeOffset
 			end
-			RoomSaveTask:GetRoomChange()
-			ItemHandler:RemoveAbilities()
+			if TimeOffset - VerifyDelay >= 100 then
+				ItemHandler:VerifyInventory()
+				VerifyDelay = TimeOffset
+			end
 			if DeathlinkEnabled then
 				Deathlink()
 			end

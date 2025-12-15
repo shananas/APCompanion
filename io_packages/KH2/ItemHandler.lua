@@ -6,11 +6,13 @@ local SoraCurrentAbilitySlot = 0x25D8
 local SoraBufferSlots = { [0x2546] = true, [0x2548] = true, [0x254A] = true, [0x254C] = true }
 local SoraEquippedKeyladeSlots = { 0x24F0, 0x32F4, 0x339C, 0x33D4, }
 
-local HighJumpSlot = 0x25DA
-local QuickRunSlot = 0x25DC
-local DodgeRollSlot = 0x25DE
-local AerialDodgeSlot = 0x25E0
-local GlideSlot = 0x25E2
+local GrowthSlots = {
+    ["High Jump"] = 0x25DA,
+    ["Quick Run"] = 0x25DC,
+    ["Dodge Roll"] = 0x25DE,
+    ["Aerial Dodge"] = 0x25E0,
+    ["Glide"] = 0x25E2,
+}
 
 local DonaldBack = 0x26F4
 local DonaldFront = 0x2658
@@ -65,11 +67,11 @@ function ItemHandler:GiveItem(value)
                 if ReadShort(Save + SoraEquippedKeyladeSlots[i]) == value.ID then
                     amount = amount - 1
                     if amount <= 0 then
-                        amount = 0
                         break
                     end
                 end
             end
+            amount = math.max(0, amount - (SoldItems[value.Name] or 0))
             WriteByte(Save + value.Address, amount)
         elseif value.Type == "Accessories" then
             local amount = ItemsReceived[value.Name]
@@ -79,15 +81,15 @@ function ItemHandler:GiveItem(value)
                     if ReadShort(Base + EquipmentAnchor.Accessories[Slot]) == value.ID then
                         amount = amount - 1
                         if amount <= 0 then
-                            amount = 0
                             break
                         end
                     end
                 end
-                if amount == 0 then
+                if amount <= 0 then
                     break
                 end
             end
+            amount = math.max(0, amount - (SoldItems[value.Name] or 0))
             WriteByte(Save + value.Address, amount)
         elseif value.Type == "Armor" then
             local amount = ItemsReceived[value.Name]
@@ -97,27 +99,29 @@ function ItemHandler:GiveItem(value)
                     if ReadShort(Base + EquipmentAnchor.Armor[Slot]) == value.ID then
                         amount = amount - 1
                         if amount <= 0 then
-                            amount = 0
                             break
                         end
                     end
                 end
-                if amount == 0 then
+                if amount <= 0 then
                     break
                 end
             end
+            amount = math.max(0, amount - (SoldItems[value.Name] or 0))
             WriteByte(Save + value.Address, amount)
         elseif value.Type == "Staff" then
             local amount = ItemsReceived[value.Name]
             if ReadShort(Save + 0x2604) == value.ID then
-                amount = math.max(0, amount - 1)
+                amount = amount - 1
             end
+            amount = math.max(0, amount - (SoldItems[value.Name] or 0))
             WriteByte(Save + value.Address, amount)
         elseif value.Type == "Shield" then
             local amount = ItemsReceived[value.Name]
             if ReadShort(Save + 0x2718) == value.ID then
-                amount = math.max(0, amount - 1)
+                amount = amount - 1
             end
+            amount = math.max(0, amount - (SoldItems[value.Name] or 0))
             WriteByte(Save + value.Address, amount)
         else
             WriteByte(Save + value.Address, ItemsReceived[value.Name])
@@ -127,21 +131,9 @@ end
 
 function ItemHandler:GiveAbility(value)
     if value.Ability == "Sora" then
-        if value.Name == "High Jump" then
-            local equipped = ReadShort(Save + HighJumpSlot) & 0x8000
-            WriteShort(Save + HighJumpSlot, SoraGrowthReceived[value.Name].current | equipped)
-        elseif value.Name == "Quick Run" then
-            local equipped = ReadShort(Save + QuickRunSlot) & 0x8000
-            WriteShort(Save + QuickRunSlot, SoraGrowthReceived[value.Name].current | equipped)
-        elseif value.Name == "Dodge Roll" then
-            local equipped = ReadShort(Save + DodgeRollSlot) & 0x8000
-            WriteShort(Save + DodgeRollSlot, SoraGrowthReceived[value.Name].current | equipped)
-        elseif value.Name == "Aerial Dodge" then
-            local equipped = ReadShort(Save + AerialDodgeSlot) & 0x8000
-            WriteShort(Save + AerialDodgeSlot, SoraGrowthReceived[value.Name].current | equipped)
-        elseif value.Name == "Glide" then
-            local equipped = ReadShort(Save + GlideSlot) & 0x8000
-            WriteShort(Save + GlideSlot, SoraGrowthReceived[value.Name].current | equipped)
+        if GrowthSlots[value.Name] then
+            local equipped = ReadShort(Save + GrowthSlots[value.Name]) & 0x8000
+            WriteShort(Save + GrowthSlots[value.Name], SoraGrowthReceived[value.Name].current | equipped)
         else
             local slot = SoraBack - (#SoraAbilitiesReceived - 1) * 2
             if not SoraBufferSlots[slot] then
@@ -190,6 +182,54 @@ function ItemHandler:RemoveAbilities()
            WriteShort(Save + slot, 0)
        end
    end
+end
+
+function ItemHandler:VerifyInventory()
+    for _, item in ipairs(items) do
+        local ReceivedAmount = ItemsReceived[item.Name] or 0
+        if item.Bitmask then
+            local Bmask = 0x01 <<item.Bitmask
+            if ReceivedAmount > 0 then
+                WriteByte(Save + item.Address, ReadByte(Save + item.Address) | Bmask)
+            else
+                WriteByte(Save + item.Address, ReadByte(Save + item.Address) & ~Bmask)
+            end
+        else
+            if ReceivedAmount > 0 then
+                ItemHandler:GiveItem(item)
+            else
+                WriteByte(Save + item.Address, 0)
+            end
+        end
+    end
+    for abilityName, slot in pairs(GrowthSlots) do
+        local data = SoraGrowthReceived[abilityName]
+        if data.max - data.current <= 4 then
+            local equipped = ReadShort(Save + slot) & 0x8000
+            WriteShort(Save + slot, data.current | equipped)
+        end
+    end
+    for i = 1, #SoraAbilitiesReceived do
+         local slot = SoraBack - i * 2
+         if not SoraBufferSlots[slot] then
+             local equipped = ReadShort(Save + slot) & 0x8000
+             WriteShort(Save + slot, SoraAbilitiesReceived[i].Address | equipped)
+         end
+    end
+    for i = 1, #DonaldAbilitiesReceived do
+        local slot = DonaldBack - i * 2
+        if not DonaldBufferSlots[slot] then
+            local equipped = ReadShort(Save + slot) & 0x8000
+            WriteShort(Save + slot, DonaldAbilitiesReceived[i].Address | equipped)
+        end
+    end
+    for i = 1, #GoofyAbilitiesReceived do
+        local slot = GoofyBack - i * 2
+        if not GoofyBufferSlots[slot] then
+             local equipped = ReadShort(Save + slot) & 0x8000
+             WriteShort(Save + slot, GoofyAbilitiesReceived[i].Address | equipped)
+        end
+    end
 end
 
 return ItemHandler
