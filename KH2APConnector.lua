@@ -777,10 +777,10 @@ function _OnFrame()
 				ProcessNotification()
 				NotificationTime = TimeOffset
 			end
-			if TimeOffset - VerifyDelay >= 100 then
-				ItemHandler:VerifyInventory()
-				VerifyDelay = TimeOffset
-			end
+			--if TimeOffset - VerifyDelay >= 100 then
+			--	ItemHandler:VerifyInventory()
+			--	VerifyDelay = TimeOffset
+			--end
 			if DeathlinkEnabled then
 				Deathlink()
 			end
