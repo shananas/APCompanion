@@ -20,10 +20,11 @@ local canExecute = false
 local gameStarted = false
 local connectionInitialized = false
 
-frameCount = 0
-NotificationFrameCount = 0
-VictoryWaitTime = 0
-ChestFrameCount = 0
+local QuarterSecond
+local HalfSecond
+local OneSecond
+local FiveSeconds
+local TimeOffset
 connected = false
 ChestWait = false
 
@@ -44,7 +45,7 @@ kh2scii_dict = {
 	 ['5'] = 0x95, ['6'] = 0x96, ['7'] = 0x97, ['8'] = 0x98, ['9'] = 0x99,
 
 	 [' '] = 0x01, ['\n'] = 0x02, ['-'] = 0x54, ['!']  = 0x48, ['?']  = 0x49, ['%'] = 0x4A, ['/'] = 0x4B,
-	 ['.'] = 0x4F, [',']  = 0x50, [';'] = 0x51, [' ='] = 0x52, ['\''] = 0x57, ['('] = 0x5A, [')'] = 0x5B,
+	 ['.'] = 0x4F, [',']  = 0x50, [';'] = 0x51, ['='] = 0x52, ['\''] = 0x57, ['('] = 0x5A, [')'] = 0x5B,
 	 ['['] = 0x62, [']']  = 0x63, ['à'] = 0xB7, ['á']  = 0xB8, ['â']  = 0xB9, ['ä'] = 0xBA, ['è'] = 0xBB,
 	 ['é'] = 0xBC, ['ê']  = 0xBD, ['ë'] = 0xBE, ['ì']  = 0xBF, ['í']  = 0xC0, ['î'] = 0xC1, ['ï'] = 0xC2,
 	 ['ñ'] = 0xC3, ['ò']  = 0xC4, ['ó'] = 0xC5, ['ô']  = 0xC6, ['ö']  = 0xC7, ['ù'] = 0xC8, ['ú'] = 0xC9,
@@ -131,7 +132,7 @@ FormSummonLevels = {
 	0x3526,
 }
 DeathlinkEnabled = false
-RecievedDeath = false
+ReceivedDeath = false
 VictorySent = false
 VictoryReceived = false
 LastReceivedIndex = -1
@@ -183,7 +184,7 @@ function HandleMessage(msg)
 	end
 
 	if msg.type == MessageTypes.Test then
-		ConsolePrint("test recieved")
+		ConsolePrint("test received")
 		local _item
 		ConsolePrint(tostring(msg.values[2]))
 		if msg.values[2] ~= nil then
@@ -216,7 +217,7 @@ function HandleMessage(msg)
 			DeathlinkEnabled = ("True" == msg.values[1])
 			ConsolePrint(tostring(DeathlinkEnabled))
 		else
-			RecievedDeath = true
+			ReceivedDeath = true
 		end
 
 	elseif msg.type == MessageTypes.SlotData then
@@ -449,10 +450,12 @@ function GoalGame()
                 if FinalXemnasBeaten then
 					SendToApClient(MessageTypes.Victory, {"Victory"})
 					VictorySent = true
+					FiveSeconds = TimeOffset
 				end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
 				VictorySent = true
+				FiveSeconds = TimeOffset
 			end
 		end
     elseif Goal == 1 then
@@ -466,10 +469,12 @@ function GoalGame()
                 if FinalXemnasBeaten then
 					SendToApClient(MessageTypes.Victory, {"Victory"})
 					VictorySent = true
+					FiveSeconds = TimeOffset
 				end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
 				VictorySent = true
+				FiveSeconds = TimeOffset
 			end
 		end
     elseif Goal == 2 then
@@ -484,10 +489,12 @@ function GoalGame()
                 if FinalXemnasBeaten then
 					SendToApClient(MessageTypes.Victory, {"Victory"})
 					VictorySent = true
+					FiveSeconds = TimeOffset
                 end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
 				VictorySent = true
+				FiveSeconds = TimeOffset
 			end
 		end
     elseif Goal == 3 then
@@ -502,10 +509,12 @@ function GoalGame()
                 if FinalXemnasBeaten then
 					SendToApClient(MessageTypes.Victory, {"Victory"})
 					VictorySent = true
+					FiveSeconds = TimeOffset
                 end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
 				VictorySent = true
+				FiveSeconds = TimeOffset
 			end
         end
 	end
@@ -540,7 +549,7 @@ function Deathlink()
 	local KillSora = false
 	local IsDead = ReadLong(IsDeadAddress)
 	--if deathlink from another player
-	if RecievedDeath then
+	if ReceivedDeath then
 		-- if drive gauge >= 5 and not in atlantica
 		if ReadByte(Slot1+0x1B2)>=5 and World ~= 11 then
 			--if safe to kill sora
@@ -555,14 +564,14 @@ function Deathlink()
 	end
 	if(HasDied and IsDead==0)then
 		HasDied = false
-		if(not RecievedDeath) then
+		if(not ReceivedDeath) then
 			SendToApClient(MessageTypes.Deathlink,{Room, Evt, World})
 		end
-		RecievedDeath = false
+		ReceivedDeath = false
 	end
 end
 
-----This function is needed for room save to work
+--This function is needed for room save to work
 function SendToInv(item)
     ItemHandler:Receive(item)
 end
@@ -586,7 +595,7 @@ function ProcessAbility(item)
 end
 
 function ProcessNotification()
-	if NotificationFrameCount == 0 and #NotificationMessage > 0 then
+	if #NotificationMessage > 0 then
 		if not ChestWait then
 			if type(NotificationMessage[1]) ~= "table" or type(NotificationMessage[1][1]) ~= "string" or type(NotificationMessage[1][2]) ~= "string" then
 				ConsolePrint("Bad NotificationMessage entry removing")
@@ -614,10 +623,11 @@ function ProcessNotification()
 					WriteArray(0x800154, msg)
 					ChestWait = true
 				end
-			elseif ChestFrameCount == 0 then
+			elseif TimeOffset - OneSecond >= 1.0 then
 				WriteByte(0x800000, 3)
 				table.remove(NotificationMessage,1)
 				ChestWait = false
+				OneSecond = TimeOffset
 			end
 		elseif NotifType == "puzzle" then
 			if ReadByte(0x800000) == 0 then
@@ -651,8 +661,9 @@ function APCommunication()
 	LocationHandler:CheckWorldLocations()
 	if not VictorySent then
 		GoalGame()
-	elseif not VictoryReceived and VictoryWaitTime == 0 then
+	elseif not VictoryReceived and TimeOffset - FiveSeconds >= 5 then
 		SendToApClient(MessageTypes.Victory, {"Victory"})
+		FiveSeconds = TimeOffset
 	end
 
     local messages = ReceiveFromApClient()
@@ -678,6 +689,10 @@ function _OnInit()
 	client = socket.tcp()
 	client:settimeout(0)
 	WriteByte(0x800000, 0)
+	QuarterSecond = os.clock()
+	HalfSecond = os.clock()
+	OneSecond = os.clock()
+	FiveSeconds = os.clock()
 end
 
 function _OnFrame()
@@ -696,23 +711,15 @@ function _OnFrame()
 		PrevPlace = ReadShort(Now+0x30)
 		ARD = ReadLong(ARDPointer)
 	end
-	if not gameStarted then
-		frameCount = (frameCount + 1) % 15
-	end
-	NotificationFrameCount = (NotificationFrameCount + 1) % 30 --IF I CHANGE THIS CHECK CHEST NOTIFICATION WAIT TIME CASUE IT'LL NEED TO BE UPDATED
-	if VictorySent then
-		VictoryWaitTime = (VictoryWaitTime + 1) % 300
-	end
-	if ChestWait then
-		ChestFrameCount = (ChestFrameCount + 1) % 60
-	end
-	if not gameStarted and frameCount == 0 then
+	TimeOffset = os.clock()
+	if not gameStarted and TimeOffset - QuarterSecond >= 0.25 then
 		local connected =  ConnectToApClient()
 
 		if connected then
 			connectionInitialized = true
 			gameStarted = true
 		end
+		QuarterSecond = TimeOffset
 		return
 	end
 	PCInteracted = ReadByte(Save + 0x1D27) & 0x1 << 3 > 0
@@ -725,7 +732,10 @@ function _OnFrame()
 		if not HandshakeReceived then
 			APCommunication()
 		else
-			ProcessNotification()
+			if TimeOffset - HalfSecond >= 0.5 then
+				ProcessNotification()
+				HalfSecond = TimeOffset
+			end
 			RoomSaveTask:GetRoomChange()
 			ItemHandler:RemoveAbilities()
 			if DeathlinkEnabled then
