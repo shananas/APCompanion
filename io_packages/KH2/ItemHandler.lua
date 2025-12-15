@@ -202,34 +202,6 @@ function ItemHandler:VerifyInventory()
             end
         end
     end
-    for abilityName, slot in pairs(GrowthSlots) do
-        local data = SoraGrowthReceived[abilityName]
-        if data.max - data.current <= 4 then
-            local equipped = ReadShort(Save + slot) & 0x8000
-            WriteShort(Save + slot, data.current | equipped)
-        end
-    end
-    for i = 1, #SoraAbilitiesReceived do
-         local slot = SoraBack - i * 2
-         if not SoraBufferSlots[slot] then
-             local equipped = ReadShort(Save + slot) & 0x8000
-             WriteShort(Save + slot, SoraAbilitiesReceived[i].Address | equipped)
-         end
-    end
-    for i = 1, #DonaldAbilitiesReceived do
-        local slot = DonaldBack - i * 2
-        if not DonaldBufferSlots[slot] then
-            local equipped = ReadShort(Save + slot) & 0x8000
-            WriteShort(Save + slot, DonaldAbilitiesReceived[i].Address | equipped)
-        end
-    end
-    for i = 1, #GoofyAbilitiesReceived do
-        local slot = GoofyBack - i * 2
-        if not GoofyBufferSlots[slot] then
-             local equipped = ReadShort(Save + slot) & 0x8000
-             WriteShort(Save + slot, GoofyAbilitiesReceived[i].Address | equipped)
-        end
-    end
 end
 
 return ItemHandler
