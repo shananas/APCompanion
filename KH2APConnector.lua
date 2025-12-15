@@ -20,10 +20,10 @@ local canExecute = false
 local gameStarted = false
 local connectionInitialized = false
 
-local QuarterSecond
-local HalfSecond
-local OneSecond
-local FiveSeconds
+local APCommunicationTime
+local NotificationTime
+local ChestDelay
+local VictoryDelay
 local TimeOffset
 connected = false
 ChestWait = false
@@ -450,12 +450,12 @@ function GoalGame()
                 if FinalXemnasBeaten then
 					SendToApClient(MessageTypes.Victory, {"Victory"})
 					VictorySent = true
-					FiveSeconds = TimeOffset
+					VictoryDelay = TimeOffset
 				end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
 				VictorySent = true
-				FiveSeconds = TimeOffset
+				VictoryDelay = TimeOffset
 			end
 		end
     elseif Goal == 1 then
@@ -469,12 +469,12 @@ function GoalGame()
                 if FinalXemnasBeaten then
 					SendToApClient(MessageTypes.Victory, {"Victory"})
 					VictorySent = true
-					FiveSeconds = TimeOffset
+					VictoryDelay = TimeOffset
 				end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
 				VictorySent = true
-				FiveSeconds = TimeOffset
+				VictoryDelay = TimeOffset
 			end
 		end
     elseif Goal == 2 then
@@ -489,12 +489,12 @@ function GoalGame()
                 if FinalXemnasBeaten then
 					SendToApClient(MessageTypes.Victory, {"Victory"})
 					VictorySent = true
-					FiveSeconds = TimeOffset
+					VictoryDelay = TimeOffset
                 end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
 				VictorySent = true
-				FiveSeconds = TimeOffset
+				VictoryDelay = TimeOffset
 			end
 		end
     elseif Goal == 3 then
@@ -509,12 +509,12 @@ function GoalGame()
                 if FinalXemnasBeaten then
 					SendToApClient(MessageTypes.Victory, {"Victory"})
 					VictorySent = true
-					FiveSeconds = TimeOffset
+					VictoryDelay = TimeOffset
                 end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
 				VictorySent = true
-				FiveSeconds = TimeOffset
+				VictoryDelay = TimeOffset
 			end
         end
 	end
@@ -623,11 +623,11 @@ function ProcessNotification()
 					WriteArray(0x800154, msg)
 					ChestWait = true
 				end
-			elseif TimeOffset - OneSecond >= 1.0 then
+			elseif TimeOffset - ChestDelay >= 1.5 then
 				WriteByte(0x800000, 3)
 				table.remove(NotificationMessage,1)
 				ChestWait = false
-				OneSecond = TimeOffset
+				ChestDelay = TimeOffset
 			end
 		elseif NotifType == "puzzle" then
 			if ReadByte(0x800000) == 0 then
@@ -661,9 +661,9 @@ function APCommunication()
 	LocationHandler:CheckWorldLocations()
 	if not VictorySent then
 		GoalGame()
-	elseif not VictoryReceived and TimeOffset - FiveSeconds >= 5 then
+	elseif not VictoryReceived and TimeOffset - VictoryDelay >= 5 then
 		SendToApClient(MessageTypes.Victory, {"Victory"})
-		FiveSeconds = TimeOffset
+		VictoryDelay = TimeOffset
 	end
 
     local messages = ReceiveFromApClient()
@@ -689,10 +689,10 @@ function _OnInit()
 	client = socket.tcp()
 	client:settimeout(0)
 	WriteByte(0x800000, 0)
-	QuarterSecond = os.clock()
-	HalfSecond = os.clock()
-	OneSecond = os.clock()
-	FiveSeconds = os.clock()
+	APCommunicationTime = os.clock()
+	NotificationTime = os.clock()
+	ChestDelay = os.clock()
+	VictoryDelay = os.clock()
 end
 
 function _OnFrame()
@@ -712,14 +712,14 @@ function _OnFrame()
 		ARD = ReadLong(ARDPointer)
 	end
 	TimeOffset = os.clock()
-	if not gameStarted and TimeOffset - QuarterSecond >= 0.25 then
+	if not gameStarted and TimeOffset - APCommunicationTime >= 0.25 then
 		local connected =  ConnectToApClient()
 
 		if connected then
 			connectionInitialized = true
 			gameStarted = true
 		end
-		QuarterSecond = TimeOffset
+		APCommunicationTime = TimeOffset
 		return
 	end
 	PCInteracted = ReadByte(Save + 0x1D27) & 0x1 << 3 > 0
@@ -732,9 +732,9 @@ function _OnFrame()
 		if not HandshakeReceived then
 			APCommunication()
 		else
-			if TimeOffset - HalfSecond >= 0.5 then
+			if TimeOffset - NotificationTime >= 1.0 then
 				ProcessNotification()
-				HalfSecond = TimeOffset
+				NotificationTime = TimeOffset
 			end
 			RoomSaveTask:GetRoomChange()
 			ItemHandler:RemoveAbilities()
