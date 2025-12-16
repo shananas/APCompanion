@@ -135,8 +135,14 @@ function ItemHandler:GiveAbility(value)
             local equipped = ReadShort(Save + GrowthSlots[value.Name]) & 0x8000
             WriteShort(Save + GrowthSlots[value.Name], SoraGrowthReceived[value.Name].current | equipped)
         else
-            local slot = SoraBack - (#SoraAbilitiesReceived - 1) * 2
-            if not SoraBufferSlots[slot] then
+            local slot
+            for i = #SoraAbilitiesReceived, 1, -1 do
+                if SoraAbilitiesReceived[i] == value then
+                    slot = SoraBack - (i - 1) * 2
+                    break
+                end
+            end
+            if slot and not SoraBufferSlots[slot] then
                 local equipped = ReadShort(Save + slot) & 0x8000
                 WriteShort(Save + slot, value.Address | equipped)
             else
@@ -144,16 +150,28 @@ function ItemHandler:GiveAbility(value)
             end
         end
     elseif value.Ability == "Donald" then
-        local slot = DonaldBack - (#DonaldAbilitiesReceived - 1) * 2
-        if not DonaldBufferSlots[slot] then
+        local slot
+        for i = #DonaldAbilitiesReceived, 1, -1 do
+            if DonaldAbilitiesReceived[i] == value then
+                slot = DonaldBack - (i - 1) * 2
+                break
+            end
+        end
+        if slot and not DonaldBufferSlots[slot] then
             local equipped = ReadShort(Save + slot) & 0x8000
             WriteShort(Save + slot, value.Address | equipped)
         else
             ConsolePrint("Error too many abilities cannot receive anymore. Ability skipped "  .. value.Name)
         end
     elseif value.Ability == "Goofy" then
-        local slot = GoofyBack - (#GoofyAbilitiesReceived - 1) * 2
-        if not GoofyBufferSlots[slot] then
+        local slot
+        for i = #GoofyAbilitiesReceived, 1, -1 do
+            if GoofyAbilitiesReceived[i] == value then
+                slot = GoofyBack - (i - 1) * 2
+                break
+            end
+        end
+        if slot and not GoofyBufferSlots[slot] then
              local equipped = ReadShort(Save + slot) & 0x8000
              WriteShort(Save + slot, value.Address | equipped)
         else

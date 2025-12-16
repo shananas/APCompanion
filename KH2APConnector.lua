@@ -868,6 +868,7 @@ if GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
         InfoBarPointer = 0xABE2A8
         FadeStatus = 0xABAF38
         PlayerGaugePointer = 0x0ABCCC8
+		MenuType = 0x09001C4
 		HasDied = false
 	elseif ReadString(0x9A98B0,4) == 'KH2J' then --Steam Global
 		GameVersion = 3
@@ -915,6 +916,7 @@ if GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
         InfoBarPointer = 0xABE828
         FadeStatus = 0xABB4B8
         PlayerGaugePointer = 0x0ABD248
+		MenuType = 0x0900724
 		HasDied = false
 	elseif ReadString(0x9A98B0,4) == 'KH2J' then --Steam JP (same as Global for now)
 		GameVersion = 4
@@ -962,6 +964,7 @@ if GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
         InfoBarPointer = 0xABE828
         FadeStatus = 0xABB4B8
         PlayerGaugePointer = 0x0ABD248
+		MenuType = 0x0900724
 		HasDied = false
 	elseif ReadString(0x9A7070,4) == "KH2J" or ReadString(0x9A70B0,4) == "KH2J" or ReadString(0x9A92F0,4) == "KH2J" then
 		GameVersion = -1
