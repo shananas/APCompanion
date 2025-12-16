@@ -62,15 +62,16 @@ MessageTypes = {
 	WorldLocationChecked = 1,
 	LevelChecked = 2,
 	KeybladeChecked = 3,
-	SlotData = 4,
-	BountyList = 5,
+	BountyList = 4,
+	SlotData = 5,
 	Deathlink = 6,
-	NotificationType = 7,
-	NotificationMessage = 8,
-	ChestsOpened = 9,
-	ReceiveItem = 10,
-	RequestAllItems = 11,
-	Handshake  = 12,
+	SoldItems = 7,
+	NotificationType = 8,
+	NotificationMessage = 9,
+	ChestsOpened = 10,
+	ReceiveItem = 11,
+	RequestAllItems = 12,
+	Handshake  = 13,
 	Victory = 19,
 	Closed = 20
 }
@@ -247,6 +248,10 @@ function HandleMessage(msg)
 			table.insert(parsed, tonumber(num))
 		end
 		table.insert(BountyBosses, parsed)
+
+	elseif msg.type == MessageTypes.SoldItems then
+		SoldItems[msg.values[1]] = tonumber(msg.values[2])
+
 
 	elseif msg.type == MessageTypes.ChestsOpened then
 		for _, worldNames in pairs (Worlds) do
@@ -689,9 +694,11 @@ function IsInShop()
 			local BeforeShop = ShopState.Sellable_Snapshot[item.Name] or 0
 			local AfterShop = ReadByte(Save + item.Address)
 			SoldItems[item.Name] = (SoldItems[item.Name] or 0) + (BeforeShop - AfterShop)
+			if SoldItems[item.Name] > 0 and BeforeShop - AfterShop > 0 then
+				SendToApClient(MessageTypes.SoldItems, {item.Name, SoldItems[item.Name]})
+			end
 			ConsolePrint(item.Name .. " = " .. tostring(SoldItems[item.Name]))
 		end
-
 		ShopState.Active = false
 		ShopState.Sellable_Snapshot = {}
 	end
