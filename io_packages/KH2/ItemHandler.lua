@@ -59,7 +59,7 @@ end
 
 function ItemHandler:GiveItem(value)
     if value.Bitmask ~= nil then
-        WriteByte(Save + value.Address, ReadByte(Save + value.Address) | 0x01 <<value.Bitmask)
+        WriteByte(Save + value.Address, ReadByte(Save + value.Address) | 0x01 << value.Bitmask)
     else
         if value.Type == "Keyblade" then
             local amount = ItemsReceived[value.Name]
@@ -188,7 +188,7 @@ function ItemHandler:VerifyInventory()
     for _, item in ipairs(items) do
         local ReceivedAmount = ItemsReceived[item.Name] or 0
         if item.Bitmask then
-            local Bmask = 0x01 <<item.Bitmask
+            local Bmask = 0x01 << item.Bitmask
             if ReceivedAmount > 0 then
                 WriteByte(Save + item.Address, ReadByte(Save + item.Address) | Bmask)
             else

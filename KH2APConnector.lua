@@ -67,6 +67,7 @@ MessageTypes = {
 	Deathlink = 6,
 	NotificationType = 7,
 	NotificationMessage = 8,
+	ChestsOpened = 9,
 	ReceiveItem = 10,
 	RequestAllItems = 11,
 	Handshake  = 12,
@@ -108,6 +109,7 @@ WeaponAbilities = {}
 FormWeaponAbilities = {}
 
 LocationsChecked = {}
+ChestsOpenedList = {}
 
 MaxSoraLevel = { value = 1 }
 MaxValorLevel = { value = 1 }
@@ -148,7 +150,7 @@ local ShopState = {
 	Active = false,
 	Sellable_Snapshot = {},
 }
-
+worldTables = {}
 
 -- ############################################################
 -- ######################  Socket  ############################
@@ -191,7 +193,7 @@ function HandleMessage(msg)
 	end
 
 	if msg.type == MessageTypes.Test then
-		ConsolePrint("test received")
+		ConsolePrint(tostring(msg.values[1]))
 		local _item
 		ConsolePrint(tostring(msg.values[2]))
 		if msg.values[2] ~= nil then
@@ -245,6 +247,16 @@ function HandleMessage(msg)
 			table.insert(parsed, tonumber(num))
 		end
 		table.insert(BountyBosses, parsed)
+
+	elseif msg.type == MessageTypes.ChestsOpened then
+		for _, worldNames in pairs (Worlds) do
+			for i = 1, #worldNames do
+				if worldNames[i].Name == msg.values[1] then
+					ChestsOpenedList[worldNames[i].Name] = true
+					return
+				end
+			end
+		end
 
 	elseif msg.type == MessageTypes.Handshake then
 		HandshakeReceived = true
@@ -548,6 +560,7 @@ function CurrentWorldLocation()
     CurrentWorld = World
 	if LastWorld ~= CurrentWorld then
 		LastWorld = CurrentWorld
+		LocationHandler:CheckChests()
 		SendToApClient(MessageTypes.SlotData, {CurrentWorld})
 	end
 end
@@ -661,7 +674,7 @@ function IsInShop()
 	local InShop = (JournalValue ~= -1 and ShopValue == 5) or (JournalValue == -1 and ShopValue == 10)
 
 	if InShop and not ShopState.Active then
-		ConsolePrint("entered shop")
+		ConsolePrint("Entered shop,  Journal = " .. tostring(JournalValue) .. "  Shop = " .. tostring(ShopValue))
 		ShopState.Active = true
 		ShopState.Sellable_Snapshot = {}
 		for i = 1, #SellableItems do
@@ -670,7 +683,7 @@ function IsInShop()
 			ConsolePrint(SellableItems[i].Name .. " = " .. tostring(ShopState.Sellable_Snapshot[SellableItems[i].Name]))
 		end
 	elseif not InShop and ShopState.Active then
-		ConsolePrint("left shop")
+		ConsolePrint("Left shop,  Journal = " .. tostring(JournalValue) .. "  Shop = " .. tostring(ShopValue))
 		for i = 1, #SellableItems do
 			local item = SellableItems[i]
 			local BeforeShop = ShopState.Sellable_Snapshot[item.Name] or 0
@@ -718,6 +731,23 @@ function _OnInit()
 	LocationDefs:FormLevels()
 	LocationDefs:WeaponSlots()
 	LocationDefs:TornPageLocks()
+	worldTables = {
+		[2]  = Worlds.TT_Checks,
+		[4]  = Worlds.HB_Checks,
+		[5]  = Worlds.BC_Checks,
+		[6]  = Worlds.OC_Checks,
+		[7]  = Worlds.AG_Checks,
+		[8]  = Worlds.LoD_Checks,
+		[9]  = Worlds.Pooh_Checks,
+		[10] = Worlds.PL_Checks,
+		[11] = Worlds.AT_Checks,
+		[12] = Worlds.DC_Checks,
+		[13] = Worlds.TR_Checks,
+		[14] = Worlds.HT_Checks,
+		[16] = Worlds.PR_Checks,
+		[17] = Worlds.SP_Checks,
+		[18] = Worlds.TWTNW_Checks
+	}
 	ItemDefs:DefineItems()
 	ItemDefs:DefineAbilities()
 	ItemDefs:SellableItems()
@@ -945,23 +975,7 @@ if GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 	end
 end
 if GameVersion ~= 0 then
-	--[[Slot2  = Slot1 - NextSlot
-	Slot3  = Slot2 - NextSlot
-	Slot4  = Slot3 - NextSlot
-	Slot5  = Slot4 - NextSlot
-	Slot6  = Slot5 - NextSlot
-	Slot7  = Slot6 - NextSlot
-	Slot8  = Slot7 - NextSlot
-	Slot9  = Slot8 - NextSlot
-	Slot10 = Slot9 - NextSlot
-	Slot11 = Slot10 - NextSlot
-	Slot12 = Slot11 - NextSlot
-	Point2 = Point1 + NxtPoint
-	Point3 = Point2 + NxtPoint
-	Gauge2 = Gauge1 + NxtGauge
-	Gauge3 = Gauge2 + NxtGauge--]]
 	Menu2  = Menu1 + NextMenu
-	--Menu3  = Menu2 + NextMenu
 	RoomSaveTask:Init() --Initialize room saves
 end
 end

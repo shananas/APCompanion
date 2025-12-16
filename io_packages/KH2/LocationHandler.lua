@@ -3,30 +3,13 @@ local LocationHandler = {}
 local talked = false
 
 function LocationHandler:CheckWorldLocations()
-    worldTables = {
-       [2]  = Worlds.TT_Checks,
-       [4]  = Worlds.HB_Checks,
-       [5]  = Worlds.BC_Checks,
-       [6]  = Worlds.OC_Checks,
-       [7]  = Worlds.AG_Checks,
-       [8]  = Worlds.LoD_Checks,
-       [9]  = Worlds.Pooh_Checks,
-       [10] = Worlds.PL_Checks,
-       [11] = Worlds.AT_Checks,
-       [12] = Worlds.DC_Checks,
-       [13] = Worlds.TR_Checks,
-       [14] = Worlds.HT_Checks,
-       [16] = Worlds.PR_Checks,
-       [17] = Worlds.SP_Checks,
-       [18] = Worlds.TWTNW_Checks
-    }
-    CurrentWorld = ReadByte(Now)
+    local CurrentWorld = ReadByte(Now)
     local checks = worldTables[CurrentWorld]
     if checks then
         for i = 1, #checks do
             local contained = false
             for j = 1, #LocationsChecked do
-                if checks[i].Name == LocationsChecked[j] then
+                if checks[i].Name == LocationsChecked[j] or ChestsOpenedList[checks[i].Name] then
                     contained = true
                     break
                 end
@@ -102,4 +85,20 @@ function LocationHandler:CheckWeaponAbilities()
         contained = false
     end
 end
+
+function LocationHandler:CheckChests()
+    local CurrentWorld = ReadByte(Now)
+    local checks = worldTables[CurrentWorld]
+    if checks then
+        for i = 1, #checks do
+            if ChestsOpenedList[checks[i].Name] then
+                local Opened = ReadByte(Save + checks[i].Address)
+                if (Opened & (1 << checks[i].BitIndex)) == 0 then
+                    WriteByte(Save + checks[i].Address, Opened | 1 << checks[i].BitIndex)
+                end
+            end
+        end
+    end
+end
+
 return LocationHandler

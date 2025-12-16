@@ -19,7 +19,7 @@ end
 function RoomSaveTask:GetRoomChange() --Determine if the room has changed
 	local currRoom = Room
 	local currSve = ReadByte(Sve + 0x01)
-	if ReadLong(IsDeadAddress) ~= 0 then
+	if not HasDied and ReadLong(IsDeadAddress) ~= 0 then
 		HasDied = true
 	end
 
