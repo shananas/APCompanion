@@ -14,7 +14,7 @@ function LocationHandler:CheckWorldLocations()
                     break
                 end
             end
-            if not contained and ReadByte(Save + checks[i].Address) & 0x1 << checks[i].BitIndex > 0 then
+            if not contained and (ReadByte(Save + checks[i].Address) & (0x1 << checks[i].BitIndex)) > 0 then
                 table.insert(LocationsChecked, checks[i].Name)
                 if checks[i].Chest then
                     StoreChest(checks[i])
@@ -77,7 +77,7 @@ function LocationHandler:CheckWeaponAbilities()
             end
         end
         if not contained and ReadByte(Save + 0x06B2) == 0 then
-            if ReadByte(Save + FormWeaponAbilities[i].Address) & 0x1 << FormWeaponAbilities[i].BitIndex > 0 then
+            if (ReadByte(Save + FormWeaponAbilities[i].Address) & (0x1 << FormWeaponAbilities[i].BitIndex)) > 0 then
                 table.insert(LocationsChecked, FormWeaponAbilities[i].Name)
                 SendToApClient(MessageTypes.KeybladeChecked, {FormWeaponAbilities[i].Name})
             end
@@ -94,7 +94,7 @@ function LocationHandler:CheckChests()
             if ChestsOpenedList[checks[i].Name] then
                 local Opened = ReadByte(Save + checks[i].Address)
                 if (Opened & (1 << checks[i].BitIndex)) == 0 then
-                    WriteByte(Save + checks[i].Address, Opened | 1 << checks[i].BitIndex)
+                    WriteByte(Save + checks[i].Address, Opened | (1 << checks[i].BitIndex))
                 end
             end
         end

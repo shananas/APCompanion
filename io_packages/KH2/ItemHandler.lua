@@ -59,7 +59,7 @@ end
 
 function ItemHandler:GiveItem(value)
     if value.Bitmask ~= nil then
-        WriteByte(Save + value.Address, ReadByte(Save + value.Address) | 0x01 << value.Bitmask)
+        WriteByte(Save + value.Address, ReadByte(Save + value.Address) | (0x01 << value.Bitmask))
     else
         if value.Type == "Keyblade" then
             local amount = ItemsReceived[value.Name]

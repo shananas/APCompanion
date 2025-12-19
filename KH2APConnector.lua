@@ -159,7 +159,7 @@ worldTables = {}
 -- ############################################################
 
 function ConnectToApClient()
-    local ok, err = client:connect("127.0.0.1", 13713)
+    local ok, err = client:connect("127.0.0.1", 13137)
 
     if ok or err == "already connected" then
         ConsolePrint("Connected to client!")
@@ -547,15 +547,17 @@ end
 function CheckBountiesObtained()
 	BountiesFinished = 0
 	for i = 1, #BountyBosses do
+		local counted = false
 		for j = 1, #FormSummonLevels do
 			if BountyBosses[i][1] == FormSummonLevels[j] then
 				if ReadByte(Save + BountyBosses[i][1]) >= 7 then
 					BountiesFinished = BountiesFinished + 1
+					counted = true
 					break
 				end
 			end
 		end
-		if ReadByte(Save + BountyBosses[i][1]) & 0x1 << BountyBosses[i][2] > 0 then
+		if not counted and (ReadByte(Save + BountyBosses[i][1]) & (0x1 << BountyBosses[i][2])) > 0 then
 			BountiesFinished = BountiesFinished + 1
 		end
 	end
