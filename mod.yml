@@ -87,11 +87,11 @@ assets:
     name: plrp
     source:
     - name: 00battle.bin/PlrpList.yml
-      type: plrp  
+      type: plrp
     type: List
 - method: binarc
   name: 03system.bin
-  source:  
+  source:
   - method: listpatch
     type: list
     name: cmd
@@ -138,6 +138,40 @@ assets:
   name: limit/fm/trinity_zz.bar
   source:
   - name: 03system.bin/better_stt/trinity_zz.bar
+#Remastered trinity assets internal copy
+- method: copy
+  multi:
+  - name: remastered/limit/us/trinity_zz.bar/-0.dds
+  - name: remastered/limit/sp/trinity_zz.bar/-0.dds
+  - name: remastered/limit/it/trinity_zz.bar/-0.dds
+  - name: remastered/limit/gr/trinity_zz.bar/-0.dds
+  - name: remastered/limit/fr/trinity_zz.bar/-0.dds
+  name: remastered/limit/fm/trinity_zz.bar/-0.dds
+  source:
+  - name: remastered/limit/us/trinity_zz.bar/US_trinity_zz_bar0.png
+    type: internal
+- method: copy
+  multi:
+  - name: remastered/limit/us/trinity_zz.bar/-1.dds
+  - name: remastered/limit/sp/trinity_zz.bar/-1.dds
+  - name: remastered/limit/it/trinity_zz.bar/-1.dds
+  - name: remastered/limit/gr/trinity_zz.bar/-1.dds
+  - name: remastered/limit/fr/trinity_zz.bar/-1.dds
+  name: remastered/limit/fm/trinity_zz.bar/-1.dds
+  source:
+  - name: remastered/limit/us/trinity_zz.bar/US_trinity_zz_bar1.dds
+    type: internal
+- method: copy
+  multi:
+  - name: remastered/limit/us/trinity_zz.bar/-2.dds
+  - name: remastered/limit/sp/trinity_zz.bar/-2.dds
+  - name: remastered/limit/it/trinity_zz.bar/-2.dds
+  - name: remastered/limit/gr/trinity_zz.bar/-2.dds
+  - name: remastered/limit/fr/trinity_zz.bar/-2.dds
+  name: remastered/limit/fm/trinity_zz.bar/-2.dds
+  source:
+  - name: remastered/limit/us/trinity_zz.bar/US_trinity_zz_bar2.dds
+    type: internal
 - method: copy
   name: obj/B_EX100.mset
   source:
