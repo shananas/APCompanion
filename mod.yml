@@ -141,17 +141,6 @@ assets:
 #Remastered trinity assets internal copy
 - method: copy
   multi:
-  - name: remastered/limit/us/trinity_zz.bar/-0.dds
-  - name: remastered/limit/sp/trinity_zz.bar/-0.dds
-  - name: remastered/limit/it/trinity_zz.bar/-0.dds
-  - name: remastered/limit/gr/trinity_zz.bar/-0.dds
-  - name: remastered/limit/fr/trinity_zz.bar/-0.dds
-  name: remastered/limit/fm/trinity_zz.bar/-0.dds
-  source:
-  - name: remastered/limit/us/trinity_zz.bar/US_trinity_zz_bar0.png
-    type: internal
-- method: copy
-  multi:
   - name: remastered/limit/us/trinity_zz.bar/-1.dds
   - name: remastered/limit/sp/trinity_zz.bar/-1.dds
   - name: remastered/limit/it/trinity_zz.bar/-1.dds
