@@ -406,7 +406,7 @@ function LocationDefs:DefineWorldEvents()
             {Name = "GoA Lost Illusion",                                                     Address = 0x23DF, BitIndex = 2, Chest = true},
             {Name = "Proof of Nonexistence Location",                                        Address = 0x23DF, BitIndex = 3, Chest = true},
             {Name = "Kingdom Key Slot",                                                      Address = 0x1D27, BitIndex = 3, Chest = false},
-            {Name = "Mages Staff Slot",                                                      Address = 0x1D27, BitIndex = 3, Chest = false},
+            {Name = "Mage's Staff Slot",                                                      Address = 0x1D27, BitIndex = 3, Chest = false},
             {Name = "Knight's Shield Slot",                                                  Address = 0x1D27, BitIndex = 3, Chest = false},
         },
 
