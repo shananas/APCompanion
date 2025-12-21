@@ -473,11 +473,13 @@ function GoalGame()
             if FinalXemnasRequired then
                 if FinalXemnasBeaten then
 					SendToApClient(MessageTypes.Victory, {"Victory"})
+					ConsolePrint("Goal==0 & Final Xemnas")
 					VictorySent = true
 					VictoryDelay = TimeOffset
 				end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
+				ConsolePrint("Goal==0")
 				VictorySent = true
 				VictoryDelay = TimeOffset
 			end
@@ -492,11 +494,13 @@ function GoalGame()
             if FinalXemnasRequired then
                 if FinalXemnasBeaten then
 					SendToApClient(MessageTypes.Victory, {"Victory"})
+					ConsolePrint("Goal==1 & Final Xemnas")
 					VictorySent = true
 					VictoryDelay = TimeOffset
 				end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
+				ConsolePrint("Goal==1")
 				VictorySent = true
 				VictoryDelay = TimeOffset
 			end
@@ -512,11 +516,17 @@ function GoalGame()
             if FinalXemnasRequired then
                 if FinalXemnasBeaten then
 					SendToApClient(MessageTypes.Victory, {"Victory"})
+					ConsolePrint("Goal==2 & Final Xemnas")
+					ConoslePrint(tostring(BountiesFinished))
+					ConoslePrint(tostring(BountyRequired))
 					VictorySent = true
 					VictoryDelay = TimeOffset
                 end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
+				ConsolePrint("Goal==2")
+				ConoslePrint(tostring(BountiesFinished))
+				ConoslePrint(tostring(BountyRequired))
 				VictorySent = true
 				VictoryDelay = TimeOffset
 			end
@@ -532,11 +542,17 @@ function GoalGame()
             if FinalXemnasRequired then
                 if FinalXemnasBeaten then
 					SendToApClient(MessageTypes.Victory, {"Victory"})
+					ConsolePrint("Goal==3 & Final Xemnas")
+					ConoslePrint(tostring(BountiesFinished))
+					ConoslePrint(tostring(BountyRequired))
 					VictorySent = true
 					VictoryDelay = TimeOffset
                 end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
+				ConsolePrint("Goal==3")
+				ConoslePrint(tostring(BountiesFinished))
+				ConoslePrint(tostring(BountyRequired))
 				VictorySent = true
 				VictoryDelay = TimeOffset
 			end
@@ -561,6 +577,9 @@ function CheckBountiesObtained()
 			BountiesFinished = BountiesFinished + 1
 		end
 	end
+	ConsolePrint("CheckBountiesObtained")
+	ConoslePrint(tostring(BountiesFinished))
+	ConoslePrint(tostring(BountyRequired))
 end
 
 function CurrentWorldLocation()
