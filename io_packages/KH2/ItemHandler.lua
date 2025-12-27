@@ -1,5 +1,7 @@
 local ItemHandler = {}
 
+local VerifyIndex = 14 --Skip ansem reports since they currently dont do anything
+
 local SoraBack = 0x25D8
 local SoraFront = 0x2546
 local SoraCurrentAbilitySlot = 0x25D8
@@ -59,6 +61,9 @@ end
 
 function ItemHandler:GiveItem(value)
     if value.Bitmask ~= nil then
+        if value.Type == "Form" then
+            WriteByte(Save + 0x3410, 0)
+        end
         WriteByte(Save + value.Address, ReadByte(Save + value.Address) | (0x01 << value.Bitmask))
     else
         if value.Type == "Keyblade" then
@@ -203,22 +208,31 @@ function ItemHandler:RemoveAbilities()
 end
 
 function ItemHandler:VerifyInventory()
-    for _, item in ipairs(items) do
+    local ItemsPerFrame = 3
+    for i = 1, ItemsPerFrame do
+        local item = items[VerifyIndex]
+        if not item then
+            VerifyIndex = 14 --Skip ansem reports since they currently dont do anything
+            return
+        end
         local ReceivedAmount = ItemsReceived[item.Name] or 0
-        if item.Bitmask then
-            local Bmask = 0x01 << item.Bitmask
-            if ReceivedAmount > 0 then
-                WriteByte(Save + item.Address, ReadByte(Save + item.Address) | Bmask)
-            else
-                WriteByte(Save + item.Address, ReadByte(Save + item.Address) & ~Bmask)
+        if item.Name == "Torn Page" then
+            local TornPagesRedeemed = 0
+            for i = 1, #PoohProgress do
+            	if (ReadByte(Save + PoohProgress[i].Address) & (0x1 << PoohProgress[i].BitIndex)) > 0 then
+            		TornPagesRedeemed = TornPagesRedeemed + 1
+            	end
             end
+            ItemsReceived[item.Name] = math.max(0, math.min(TornPagesReceived - TornPagesRedeemed, 255))
+        end
+        if ReceivedAmount > 0 then
+            ItemHandler:GiveItem(item)
         else
-            if ReceivedAmount > 0 then
-                ItemHandler:GiveItem(item)
-            else
+            if not item.Bitmask then
                 WriteByte(Save + item.Address, 0)
             end
         end
+        VerifyIndex = VerifyIndex + 1
     end
 end
 

@@ -120,6 +120,7 @@ MaxMasterLevel = { value = 1 }
 MaxFinalLevel = { value = 1 }
 MaxSummonLevel = { value = 1 }
 
+ProofsGiven = false
 FinalXemnasRequired = true
 FinalXemnasBeaten = false
 Goal = -1
@@ -361,18 +362,12 @@ function ProcessItemQueue()
 			if item.Type ~= "Ability" then
 				ConsolePrint(tostring(item.Name))
 				if item.Name ~= "Torn Page" then
-					if ItemsReceived[item.Name] then
-						if ItemsReceived[item.Name] < 255 then
-							ItemsReceived[item.Name] = ItemsReceived[item.Name] + 1
-						end
-					else
-						ItemsReceived[item.Name] = 1
-					end
+					ItemsReceived[item.Name] = math.min((ItemsReceived[item.Name] or 0) + 1, 255)
 				else
 					TornPagesReceived = TornPagesReceived + 1
 					local TornPagesRedeemed = 0
 					for i = 1, #PoohProgress do
-						if ReadByte(Save + PoohProgress[i].Address) & 0x1 << PoohProgress[i].BitIndex > 0 then
+						if (ReadByte(Save + PoohProgress[i].Address) & (0x1 << PoohProgress[i].BitIndex)) > 0 then
 							TornPagesRedeemed = TornPagesRedeemed + 1
 						end
 					end
@@ -486,10 +481,14 @@ function GoalGame()
 		end
     elseif Goal == 1 then
         if ReadByte(Save + 0x3641) >= LuckyEmblemsRequired then
-            if ReadByte(Save + 0x36B3) < 1 then
+            if not ProofsGiven then
                 WriteByte(Save + 0x36B2, 1)
                 WriteByte(Save + 0x36B3, 1)
                 WriteByte(Save + 0x36B4, 1)
+				ItemsReceived["Proof of Connection"] = 1
+				ItemsReceived["Proof of Nonexistence"] = 1
+				ItemsReceived["Proof of Peace"] = 1
+				ProofsGiven = true
 			end
             if FinalXemnasRequired then
                 if FinalXemnasBeaten then
@@ -508,10 +507,14 @@ function GoalGame()
     elseif Goal == 2 then
 		CheckBountiesObtained()
         if BountiesFinished >= BountyRequired then
-            if ReadByte(Save + 0x36B3) < 1 then
+            if not ProofsGiven then
                 WriteByte(Save + 0x36B2, 1)
                 WriteByte(Save + 0x36B3, 1)
                 WriteByte(Save + 0x36B4, 1)
+				ItemsReceived["Proof of Connection"] = 1
+				ItemsReceived["Proof of Nonexistence"] = 1
+				ItemsReceived["Proof of Peace"] = 1
+				ProofsGiven = true
 			end
             if FinalXemnasRequired then
                 if FinalXemnasBeaten then
@@ -534,10 +537,14 @@ function GoalGame()
     elseif Goal == 3 then
 		CheckBountiesObtained()
         if BountiesFinished >= BountyRequired and ReadByte(Save + 0x3641) >= LuckyEmblemsRequired then
-            if ReadByte(Save + 0x36B3) < 1 then
+            if not ProofsGiven then
                 WriteByte(Save + 0x36B2, 1)
                 WriteByte(Save + 0x36B3, 1)
                 WriteByte(Save + 0x36B4, 1)
+				ItemsReceived["Proof of Connection"] = 1
+				ItemsReceived["Proof of Nonexistence"] = 1
+				ItemsReceived["Proof of Peace"] = 1
+				ProofsGiven = true
 			end
             if FinalXemnasRequired then
                 if FinalXemnasBeaten then
@@ -831,14 +838,11 @@ function _OnFrame()
 		else
 			RoomSaveTask:GetRoomChange()
 			ItemHandler:RemoveAbilities()
-			if TimeOffset - NotificationTime >= 10 then
+			if TimeOffset - NotificationTime >= 0.5 then
 				ProcessNotification()
 				NotificationTime = TimeOffset
 			end
-			--if TimeOffset - VerifyDelay >= 100 then
-			--	ItemHandler:VerifyInventory()
-			--	VerifyDelay = TimeOffset
-			--end
+			ItemHandler:VerifyInventory()
 			if DeathlinkEnabled then
 				Deathlink()
 			end
