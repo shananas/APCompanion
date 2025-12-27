@@ -584,9 +584,9 @@ function CheckBountiesObtained()
 			BountiesFinished = BountiesFinished + 1
 		end
 	end
-	ConsolePrint("CheckBountiesObtained")
-	ConsolePrint(tostring(BountiesFinished))
-	ConsolePrint(tostring(BountyRequired))
+	--ConsolePrint("CheckBountiesObtained")
+	--ConsolePrint(tostring(BountiesFinished))
+	--ConsolePrint(tostring(BountyRequired))
 end
 
 function CurrentWorldLocation()
