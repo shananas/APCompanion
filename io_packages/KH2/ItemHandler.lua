@@ -52,16 +52,16 @@ end
 function ItemHandler:Receive(item)
     ConsolePrint("Received " .. item.Name)
     if item.Type ~= "Ability" then
-        self:GiveItem(item)
+        self:GiveItem(item, false)
     else
         self:GiveAbility(item)
     end
 
 end
 
-function ItemHandler:GiveItem(value)
+function ItemHandler:GiveItem(value, verify)
     if value.Bitmask ~= nil then
-        if value.Type == "Form" then
+        if value.Type == "Form" and not verify then
             WriteByte(Save + 0x3410, 0)
         end
         WriteByte(Save + value.Address, ReadByte(Save + value.Address) | (0x01 << value.Bitmask))
@@ -226,7 +226,7 @@ function ItemHandler:VerifyInventory()
             ItemsReceived[item.Name] = math.max(0, math.min(TornPagesReceived - TornPagesRedeemed, 255))
         end
         if ReceivedAmount > 0 then
-            ItemHandler:GiveItem(item)
+            ItemHandler:GiveItem(item, true)
         else
             if not item.Bitmask then
                 WriteByte(Save + item.Address, 0)
