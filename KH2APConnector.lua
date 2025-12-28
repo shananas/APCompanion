@@ -24,7 +24,7 @@ local APCommunicationTime
 local NotificationTime
 local ChestDelay
 local VictoryDelay
-local VerifyDelay
+local InitialVictoryDelay
 local TimeOffset
 connected = false
 ChestWait = false
@@ -584,9 +584,9 @@ function CheckBountiesObtained()
 			BountiesFinished = BountiesFinished + 1
 		end
 	end
-	--ConsolePrint("CheckBountiesObtained")
-	--ConsolePrint(tostring(BountiesFinished))
-	--ConsolePrint(tostring(BountyRequired))
+	ConsolePrint("CheckBountiesObtained")
+	ConsolePrint(tostring(BountiesFinished))
+	ConsolePrint(tostring(BountyRequired))
 end
 
 function CurrentWorldLocation()
@@ -743,8 +743,9 @@ function APCommunication()
 	LocationHandler:CheckLevelLocations()
 	LocationHandler:CheckWeaponAbilities()
 	LocationHandler:CheckWorldLocations()
-	if not VictorySent then
+	if not VictorySent and TimeOffset - InitialVictoryDelay > 1 then
 		GoalGame()
+		InitialVictoryDelay = TimeOffset
 	elseif not VictoryReceived and TimeOffset - VictoryDelay >= 5 then
 		SendToApClient(MessageTypes.Victory, {"Victory"})
 		VictoryDelay = TimeOffset
@@ -795,7 +796,7 @@ function _OnInit()
 	NotificationTime = os.clock()
 	ChestDelay = os.clock()
 	VictoryDelay = os.clock()
-	VerifyDelay = os.clock()
+	InitialVictoryDelay = os.clock()
 end
 
 function _OnFrame()
