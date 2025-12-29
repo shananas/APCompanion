@@ -248,7 +248,19 @@ function HandleMessage(msg)
 		for num in finalmsg:gmatch("%d+") do
 			table.insert(parsed, tonumber(num))
 		end
-		table.insert(BountyBosses, parsed)
+
+		local exists = false
+		for i = 1, #BountyBosses do
+			if BountyBosses[i][1] == parsed[1] and BountyBosses[i][2] == parsed[2] then
+				exists = true
+				break
+			end
+		end
+		if not exists then
+			table.insert(BountyBosses, parsed)
+		else
+			ConsolePrint("Bounty already in list skipping" .. tostring(parsed[1]) .. ", " .. tostring(parsed[2]))
+		end
 
 	elseif msg.type == MessageTypes.SoldItems then
 		SoldItems[msg.values[1]] = tonumber(msg.values[2])
@@ -506,7 +518,7 @@ function GoalGame()
 		end
     elseif Goal == 2 then
 		CheckBountiesObtained()
-        if BountiesFinished >= BountyRequired then
+		if BountiesFinished >= BountyRequired then
             if not ProofsGiven then
                 WriteByte(Save + 0x36B2, 1)
                 WriteByte(Save + 0x36B3, 1)
@@ -691,11 +703,13 @@ function ProcessNotification()
 			end
 		elseif NotifType == "info" then
 			local InfoBarPointerRef = ReadLong(InfoBarPointer)
-			if ReadByte(0x800000) == 0 and InfoBarPointerRef ~= 0 and ReadInt(InfoBarPointerRef + 0x48) == 0 then
-				WriteByte(0x800000, 1)
-				local msg = textToKHSCII(NotificationMessage[1][2])
-				WriteArray(0x800004, msg)
-				table.remove(NotificationMessage,1)
+			if InfoBarPointerRef ~= nil and InfoBarPointerRef ~= 0 then
+				if ReadByte(0x800000) == 0 and ReadInt(InfoBarPointerRef + 0x48) == 0 then
+					WriteByte(0x800000, 1)
+					local msg = textToKHSCII(NotificationMessage[1][2])
+					WriteArray(0x800004, msg)
+					table.remove(NotificationMessage,1)
+				end
 			end
 		end
 	end
@@ -746,7 +760,7 @@ function APCommunication()
 	if not VictorySent and TimeOffset - InitialVictoryDelay > 1 then
 		GoalGame()
 		InitialVictoryDelay = TimeOffset
-	elseif not VictoryReceived and TimeOffset - VictoryDelay >= 5 then
+	elseif VictorySent and Goal >= 0 and Goal <= 3 and not VictoryReceived and TimeOffset - VictoryDelay >= 5 then
 		SendToApClient(MessageTypes.Victory, {"Victory"})
 		VictoryDelay = TimeOffset
 	end
