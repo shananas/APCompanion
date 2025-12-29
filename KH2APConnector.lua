@@ -19,13 +19,13 @@ LUAGUI_DESC = "Kingdom Hearts 2 AP Integration using Lua Socket"
 local canExecute = false
 local gameStarted = false
 local connectionInitialized = false
-
-local APCommunicationTime
-local NotificationTime
-local ChestDelay
-local VictoryDelay
-local InitialVictoryDelay
-local TimeOffset
+local Framecount = 0
+local FramerateSelected = -1
+local Modulo = 15
+local QuarterSecond = 0
+local HalfSecond = 0
+local OneSecond = 0
+local FiveSeconds = 0
 connected = false
 ChestWait = false
 
@@ -482,13 +482,11 @@ function GoalGame()
 					SendToApClient(MessageTypes.Victory, {"Victory"})
 					ConsolePrint("Goal==0 & Final Xemnas")
 					VictorySent = true
-					VictoryDelay = TimeOffset
 				end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
 				ConsolePrint("Goal==0")
 				VictorySent = true
-				VictoryDelay = TimeOffset
 			end
 		end
     elseif Goal == 1 then
@@ -507,18 +505,16 @@ function GoalGame()
 					SendToApClient(MessageTypes.Victory, {"Victory"})
 					ConsolePrint("Goal==1 & Final Xemnas")
 					VictorySent = true
-					VictoryDelay = TimeOffset
 				end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
 				ConsolePrint("Goal==1")
 				VictorySent = true
-				VictoryDelay = TimeOffset
 			end
 		end
     elseif Goal == 2 then
 		CheckBountiesObtained()
-		if BountiesFinished >= BountyRequired then
+        if BountiesFinished >= BountyRequired then
             if not ProofsGiven then
                 WriteByte(Save + 0x36B2, 1)
                 WriteByte(Save + 0x36B3, 1)
@@ -535,7 +531,6 @@ function GoalGame()
 					ConsolePrint(tostring(BountiesFinished))
 					ConsolePrint(tostring(BountyRequired))
 					VictorySent = true
-					VictoryDelay = TimeOffset
                 end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
@@ -543,7 +538,6 @@ function GoalGame()
 				ConsolePrint(tostring(BountiesFinished))
 				ConsolePrint(tostring(BountyRequired))
 				VictorySent = true
-				VictoryDelay = TimeOffset
 			end
 		end
     elseif Goal == 3 then
@@ -565,7 +559,6 @@ function GoalGame()
 					ConsolePrint(tostring(BountiesFinished))
 					ConsolePrint(tostring(BountyRequired))
 					VictorySent = true
-					VictoryDelay = TimeOffset
                 end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
@@ -573,7 +566,6 @@ function GoalGame()
 				ConsolePrint(tostring(BountiesFinished))
 				ConsolePrint(tostring(BountyRequired))
 				VictorySent = true
-				VictoryDelay = TimeOffset
 			end
         end
 	end
@@ -587,6 +579,7 @@ function CheckBountiesObtained()
 			if BountyBosses[i][1] == FormSummonLevels[j] then
 				if ReadByte(Save + BountyBosses[i][1]) >= 7 then
 					BountiesFinished = BountiesFinished + 1
+					ConsolePrint("Form/Summon" .. tostring(BountyBosses[i][1]))
 					counted = true
 					break
 				end
@@ -594,11 +587,12 @@ function CheckBountiesObtained()
 		end
 		if not counted and (ReadByte(Save + BountyBosses[i][1]) & (0x1 << BountyBosses[i][2])) > 0 then
 			BountiesFinished = BountiesFinished + 1
+			ConsolePrint("Superboss" .. tostring(BountyBosses[i][1]) .. ", " .. tostring(BountyBosses[i][2]))
 		end
 	end
-	ConsolePrint("CheckBountiesObtained")
-	ConsolePrint(tostring(BountiesFinished))
-	ConsolePrint(tostring(BountyRequired))
+	--ConsolePrint("CheckBountiesObtained")
+	--ConsolePrint(tostring(BountiesFinished))
+	--ConsolePrint(tostring(BountyRequired))
 end
 
 function CurrentWorldLocation()
@@ -688,11 +682,10 @@ function ProcessNotification()
 					WriteArray(0x800154, msg)
 					ChestWait = true
 				end
-			elseif TimeOffset - ChestDelay >= 1.5 then
+			elseif (Framecount % OneSecond) == 0 then
 				WriteByte(0x800000, 3)
 				table.remove(NotificationMessage,1)
 				ChestWait = false
-				ChestDelay = TimeOffset
 			end
 		elseif NotifType == "puzzle" then
 			if ReadByte(0x800000) == 0 then
@@ -702,9 +695,9 @@ function ProcessNotification()
 				table.remove(NotificationMessage,1)
 			end
 		elseif NotifType == "info" then
-			local InfoBarPointerRef = ReadLong(InfoBarPointer)
-			if InfoBarPointerRef ~= nil and InfoBarPointerRef ~= 0 then
-				if ReadByte(0x800000) == 0 and ReadInt(InfoBarPointerRef + 0x48) == 0 then
+			if ReadByte(0x0717418) == 1 then
+				local InfoBarPointerRef = ReadLong(InfoBarPointer)
+				if ReadByte(0x800000) == 0 and InfoBarPointerRef ~= 0 and ReadInt(InfoBarPointerRef + 0x48) == 0 then
 					WriteByte(0x800000, 1)
 					local msg = textToKHSCII(NotificationMessage[1][2])
 					WriteArray(0x800004, msg)
@@ -757,12 +750,10 @@ function APCommunication()
 	LocationHandler:CheckLevelLocations()
 	LocationHandler:CheckWeaponAbilities()
 	LocationHandler:CheckWorldLocations()
-	if not VictorySent and TimeOffset - InitialVictoryDelay > 1 then
+	if not VictorySent and (Framecount % OneSecond) == 0 then
 		GoalGame()
-		InitialVictoryDelay = TimeOffset
-	elseif VictorySent and Goal >= 0 and Goal <= 3 and not VictoryReceived and TimeOffset - VictoryDelay >= 5 then
+	elseif VictorySent and Goal >= 0 and Goal <= 3 and not VictoryReceived and (Framecount % FiveSeconds) == 0 then
 		SendToApClient(MessageTypes.Victory, {"Victory"})
-		VictoryDelay = TimeOffset
 	end
 
     local messages = ReceiveFromApClient()
@@ -806,11 +797,6 @@ function _OnInit()
 	client = socket.tcp()
 	client:settimeout(0)
 	WriteByte(0x800000, 0)
-	APCommunicationTime = os.clock()
-	NotificationTime = os.clock()
-	ChestDelay = os.clock()
-	VictoryDelay = os.clock()
-	InitialVictoryDelay = os.clock()
 end
 
 function _OnFrame()
@@ -829,15 +815,44 @@ function _OnFrame()
 		PrevPlace = ReadShort(Now+0x30)
 		ARD = ReadLong(ARDPointer)
 	end
-	TimeOffset = os.clock()
-	if not gameStarted and TimeOffset - APCommunicationTime >= 0.25 then
+	if FramerateSelected ~= ReadByte(Framerate) then
+		FramerateSelected = ReadByte(Framerate)
+		if FramerateSelected == 0 then
+			Modulo = 15
+			QuarterSecond = Modulo
+			HalfSecond = Modulo * 2
+			OneSecond = Modulo * 4
+			FiveSeconds = Modulo * 20
+			ConsolePrint("Switched to 30 FPS")
+		elseif FramerateSelected == 1 then
+			Modulo = 30
+			QuarterSecond = Modulo
+			HalfSecond = Modulo * 2
+			OneSecond = Modulo * 4
+			FiveSeconds = Modulo * 20
+			ConsolePrint("Switched to 60 FPS")
+		elseif FramerateSelected == 2 or FramerateSelected == 3 then
+			Modulo = 60
+			QuarterSecond = Modulo
+			HalfSecond = Modulo * 2
+			OneSecond = Modulo * 4
+			FiveSeconds = Modulo * 20
+			ConsolePrint("Switched to 120/Unlimited FPS")
+		else
+			ConsolePrint("Error reading Framerate")
+		end
+	end
+	Framecount = Framecount + 1
+	if Framecount >= FiveSeconds then
+		Framecount = 0
+	end
+	if not gameStarted and (Framecount % QuarterSecond) == 0 then
 		local connected =  ConnectToApClient()
 
 		if connected then
 			connectionInitialized = true
 			gameStarted = true
 		end
-		APCommunicationTime = TimeOffset
 		return
 	end
 	IsInShop()
@@ -853,9 +868,8 @@ function _OnFrame()
 		else
 			RoomSaveTask:GetRoomChange()
 			ItemHandler:RemoveAbilities()
-			if TimeOffset - NotificationTime >= 0.5 then
+			if (Framecount % HalfSecond) == 0 then
 				ProcessNotification()
-				NotificationTime = TimeOffset
 			end
 			ItemHandler:VerifyInventory()
 			if DeathlinkEnabled then
@@ -917,6 +931,8 @@ if GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
         PlayerGaugePointer = 0x0ABCCC8
 		MenuType = 0x09001C4
 		HasDied = false
+		PauseFlag = 0x0717208
+		Framerate = 0x08CBD0A
 	elseif ReadString(0x9A98B0,4) == 'KH2J' then --Steam Global
 		GameVersion = 3
 		print('GoA Steam Global Version')
@@ -965,6 +981,8 @@ if GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
         PlayerGaugePointer = 0x0ABD248
 		MenuType = 0x0900724
 		HasDied = false
+		PauseFlag = 0x0717418
+		Framerate = 0x071536E
 	elseif ReadString(0x9A98B0,4) == 'KH2J' then --Steam JP (same as Global for now)
 		GameVersion = 4
 		print('GoA Steam JP Version')
@@ -1013,6 +1031,8 @@ if GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
         PlayerGaugePointer = 0x0ABD248
 		MenuType = 0x0900724
 		HasDied = false
+		PauseFlag = 0x0717418
+		Framerate = 0x071536E
 	elseif ReadString(0x9A7070,4) == "KH2J" or ReadString(0x9A70B0,4) == "KH2J" or ReadString(0x9A92F0,4) == "KH2J" then
 		GameVersion = -1
 		print("Epic Version is outdated. Please update the game.")
