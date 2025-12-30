@@ -791,7 +791,7 @@ function _OnInit()
 	ItemDefs:DefineAbilities()
 	ItemDefs:SellableItems()
 	GameVersion = 0
-	print('Lua Socket test')
+	ConsolePrint('KH2APConnector Initializing')
 	client = socket.tcp()
 	client:settimeout(0)
 	WriteByte(0x800000, 0)
@@ -885,7 +885,7 @@ function GetVersion() --Define anchor addresses
 if GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 	if ReadString(0x9A9330,4) == 'KH2J' then --EGS
 		GameVersion = 2
-		print('GoA Epic Version')
+		ConsolePrint('KH2APConnector Epic Version')
 		Now = 0x0716DF8
 		Sve = 0x2A0BFC0
 		Save = 0x09A9330
@@ -935,7 +935,7 @@ if GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 		Framerate = 0x08CBD0A
 	elseif ReadString(0x9A98B0,4) == 'KH2J' then --Steam Global
 		GameVersion = 3
-		print('GoA Steam Global Version')
+		ConsolePrint('KH2APConnector Steam Global Version')
 		Now = 0x0717008
 		Sve = 0x2A0C540
 		Save = 0x09A98B0
@@ -983,65 +983,15 @@ if GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 		HasDied = false
 		PauseFlag = 0x0717418
 		Framerate = 0x071536E
-	elseif ReadString(0x9A98B0,4) == 'KH2J' then --Steam JP (same as Global for now)
-		GameVersion = 4
-		print('GoA Steam JP Version')
-		Now = 0x0717008
-		Sve = 0x2A0C540
-		Save = 0x09A98B0
-		Obj0Pointer = 0x2A25030
-		Sys3Pointer = 0x2AE5E50
-		Btl0Pointer = 0x2AE5E58
-		ARDPointer = 0x2A0F828
-		Music = 0x0ABAD44
-		Pause = 0x0ABB878
-		React = 0x2A11162
-		Cntrl = 0x2A171E8
-		Timer = 0x0ABB850
-		Songs = 0x0B65D74
-		GScre = 0x072B130
-		GMdal = 0x072B2C4
-		GKill = 0x0AF7146
-		CamTyp = 0x0718CA8
-		GamSpd = 0x0717424
-		CutNow = 0x0B64F98
-		CutLen = 0x0B64FB4
-		CutSkp = 0x0B64F9C
-		BtlTyp = 0x2A11404
-		BtlEnd = 0x2A0FCE0
-		TxtBox = 0x074DF20
-		DemCln = 0x2A0F8B4
-		Slot1    = 0x2A23598
-		NextSlot = 0x278
-		Point1   = 0x2A0FA48
-		NxtPoint = 0x50
-		Gauge1   = 0x2A0FB38
-		NxtGauge = 0x48
-		Menu1    = 0x2A11110
-		NextMenu = 0x8
-		Obj0 = ReadLong(Obj0Pointer)
-		Sys3 = ReadLong(Sys3Pointer)
-		Btl0 = ReadLong(Btl0Pointer)
-		MSN = 0x0BF33C0
-		IsDeadAddress = 0x0BEF4A8
-        Journal = 0x7434E0
-        Shop =  0x7435D0
-        InfoBarPointer = 0xABE828
-        FadeStatus = 0xABB4B8
-        PlayerGaugePointer = 0x0ABD248
-		MenuType = 0x0900724
-		HasDied = false
-		PauseFlag = 0x0717418
-		Framerate = 0x071536E
 	elseif ReadString(0x9A7070,4) == "KH2J" or ReadString(0x9A70B0,4) == "KH2J" or ReadString(0x9A92F0,4) == "KH2J" then
 		GameVersion = -1
-		print("Epic Version is outdated. Please update the game.")
+		ConsolePrint("Epic Version is outdated. Please update the game.")
 	elseif ReadString(0x9A9830,4) == "KH2J" then
 		GameVersion = -1
-		print("Steam Global Version is outdated. Please update the game.")
+		ConsolePrint("Steam Global Version is outdated. Please update the game.")
 	elseif ReadString(0x9A8830,4) == "KH2J" then
 		GameVersion = -1
-		print("Steam JP Version is outdated. Please update the game.")
+		ConsolePrint("Steam JP Version is outdated. Please update the game.")
 	end
 end
 if GameVersion ~= 0 then
