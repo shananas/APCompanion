@@ -16,22 +16,20 @@ LUAGUI_NAME = "KH2 AP Connector [Socket]"
 LUAGUI_AUTH = "Shananas"
 LUAGUI_DESC = "Kingdom Hearts 2 AP Integration using Lua Socket"
 
-local canExecute = false
-local gameStarted = false
-local connectionInitialized = false
-local Framecount = 0
+local GameStarted = false
+local ConnectionInitialized = false
+local FrameCount = 0
 local FramerateSelected = -1
 local Modulo = 15
 local QuarterSecond = 0
 local HalfSecond = 0
 local OneSecond = 0
 local FiveSeconds = 0
-connected = false
 ChestWait = false
 
 local client
 
-kh2scii_dict = {
+Kh2sciiDict = {
 	 ['a'] = 0x9A, ['b'] = 0x9B, ['c'] = 0x9C, ['d'] = 0x9D, ['e'] = 0x9E, ['f'] = 0x9F, ['g'] = 0xA0, ['h'] = 0xA1,
 	 ['i'] = 0xA2, ['j'] = 0xA3, ['k'] = 0xA4, ['l'] = 0xA5, ['m'] = 0xA6, ['n'] = 0xA7, ['o'] = 0xA8, ['p'] = 0xA9,
 	 ['q'] = 0xAA, ['r'] = 0xAB, ['s'] = 0xAC, ['t'] = 0xAD, ['u'] = 0xAE, ['v'] = 0xAF, ['w'] = 0xB0, ['x'] = 0xB1,
@@ -79,8 +77,8 @@ HandshakeSent = false
 HandshakeReceived = false
 
 --Items
-items = {}
-abilities = {}
+Items = {}
+Abilities = {}
 ItemsReceived = {
 	["Torn Page"] = 0,
 }
@@ -98,11 +96,11 @@ SummonLevels = {}
 SoraAbilitiesReceived = {}
 --current is (level 1 growth - 1) since anytime you receive it it increments it by 1 including the first growth
 SoraGrowthReceived = {
-	["High Jump"] = {current = 0x05D, max = 0x061},
-	["Quick Run"] = {current = 0x061, max = 0x065},
-	["Dodge Roll"] = {current = 0x233, max = 0x237},
-	["Aerial Dodge"] = {current = 0x065, max = 0x069},
-	["Glide"] = {current = 0x069, max = 0x06D},
+	["High Jump"] = {Current = 0x05D, Max = 0x061},
+	["Quick Run"] = {Current = 0x061, Max = 0x065},
+	["Dodge Roll"] = {Current = 0x233, Max = 0x237},
+	["Aerial Dodge"] = {Current = 0x065, Max = 0x069},
+	["Glide"] = {Current = 0x069, Max = 0x06D},
 }
 DonaldAbilitiesReceived = {}
 GoofyAbilitiesReceived = {}
@@ -112,13 +110,13 @@ FormWeaponAbilities = {}
 LocationsChecked = {}
 ChestsOpenedList = {}
 
-MaxSoraLevel = { value = 1 }
-MaxValorLevel = { value = 1 }
-MaxWisdomLevel = { value = 1 }
-MaxLimitLevel = { value = 1 }
-MaxMasterLevel = { value = 1 }
-MaxFinalLevel = { value = 1 }
-MaxSummonLevel = { value = 1 }
+MaxSoraLevel = { Value = 1 }
+MaxValorLevel = { Value = 1 }
+MaxWisdomLevel = { Value = 1 }
+MaxLimitLevel = { Value = 1 }
+MaxMasterLevel = { Value = 1 }
+MaxFinalLevel = { Value = 1 }
+MaxSummonLevel = { Value = 1 }
 
 ProofsGiven = false
 FinalXemnasRequired = true
@@ -150,9 +148,9 @@ SellableItems = {}
 SoldItems = {}
 local ShopState = {
 	Active = false,
-	Sellable_Snapshot = {},
+	SellableSnapshot = {},
 }
-worldTables = {}
+WorldTables = {}
 
 -- ############################################################
 -- ######################  Socket  ############################
@@ -300,7 +298,7 @@ function HandleMessage(msg)
 	end
 end
 
-local buildingMessage = ""
+local BuildingMessage = ""
 function ReceiveFromApClient()
     if not client then return {} end
 
@@ -309,15 +307,15 @@ function ReceiveFromApClient()
 		local message, err = client:receive("*l")
 		if message and message ~= "" then
 
-			if buildingMessage ~= "" then
-				message = buildingMessage .. message
-				buildingMessage = ""
+			if BuildingMessage ~= "" then
+				message = BuildingMessage .. message
+				BuildingMessage = ""
 			end
 
             local isWait = message:sub(-4) == ";MOR"
             local isFin = message:sub(-4) == ";FIN"
             if isWait then
-                buildingMessage = message:sub(1, -5)
+                BuildingMessage = message:sub(1, -5)
             elseif isFin then
                 message = message:sub(1, -5)
             end
@@ -356,8 +354,8 @@ function ReceiveFromApClient()
 end
 
 function CloseConnection()
-	connectionInitialized = false
-	gameStarted = false
+	ConnectionInitialized = false
+	GameStarted = false
 	HandshakeSent = false
 	HandshakeReceived = false
 	client:close()
@@ -403,17 +401,17 @@ end
 -- ############################################################
 
 function getItemById(item_id)
-	for i = 1, #items do
-		if items[i].ID == item_id then
-			return items[i]
+	for i = 1, #Items do
+		if Items[i].ID == item_id then
+			return Items[i]
 		end
 	end
 end
 
 function getAbilityById(ab_id, member)
-	for i = 1, #abilities do
-		if abilities[i].ID == ab_id  and abilities[i].Ability == member then
-			return abilities[i]
+	for i = 1, #Abilities do
+		if Abilities[i].ID == ab_id  and Abilities[i].Ability == member then
+			return Abilities[i]
 		end
 	end
 end
@@ -455,7 +453,7 @@ function textToKHSCII(value)
 			    i = i + 1  -- not a valid command, just move forward
 			end
 		else
-			charCode = kh2scii_dict[c] or 0x01
+			charCode = Kh2sciiDict[c] or 0x01
 			i = i + 1
 		end
 
@@ -641,8 +639,8 @@ end
 
 function ProcessAbility(item)
 	if SoraGrowthReceived[item.Name] then
-		if SoraGrowthReceived[item.Name].current < SoraGrowthReceived[item.Name].max then
-			SoraGrowthReceived[item.Name].current = SoraGrowthReceived[item.Name].current + 1
+		if SoraGrowthReceived[item.Name].Current < SoraGrowthReceived[item.Name].Max then
+			SoraGrowthReceived[item.Name].Current = SoraGrowthReceived[item.Name].Current + 1
 		end
 	elseif item.Ability == "Sora" then
 		table.insert(SoraAbilitiesReceived, item)
@@ -682,7 +680,7 @@ function ProcessNotification()
 					WriteArray(0x800154, msg)
 					ChestWait = true
 				end
-			elseif (Framecount % OneSecond) == 0 then
+			elseif (FrameCount % OneSecond) == 0 then
 				WriteByte(0x800000, 3)
 				table.remove(NotificationMessage,1)
 				ChestWait = false
@@ -714,28 +712,28 @@ function IsInShop()
 	local InShop = (JournalValue ~= -1 and ShopValue == 5) or (JournalValue == -1 and ShopValue == 10)
 
 	if InShop and not ShopState.Active then
-		ConsolePrint("Entered shop,  Journal = " .. tostring(JournalValue) .. "  Shop = " .. tostring(ShopValue))
+		--ConsolePrint("Entered shop,  Journal = " .. tostring(JournalValue) .. "  Shop = " .. tostring(ShopValue))
 		ShopState.Active = true
-		ShopState.Sellable_Snapshot = {}
+		ShopState.SellableSnapshot = {}
 		for i = 1, #SellableItems do
 			local Amount = ReadByte(Save + SellableItems[i].Address)
-			ShopState.Sellable_Snapshot[SellableItems[i].Name] = Amount
-			ConsolePrint(SellableItems[i].Name .. " = " .. tostring(ShopState.Sellable_Snapshot[SellableItems[i].Name]))
+			ShopState.SellableSnapshot[SellableItems[i].Name] = Amount
+			--ConsolePrint(SellableItems[i].Name .. " = " .. tostring(ShopState.SellableSnapshot[SellableItems[i].Name]))
 		end
 	elseif not InShop and ShopState.Active then
-		ConsolePrint("Left shop,  Journal = " .. tostring(JournalValue) .. "  Shop = " .. tostring(ShopValue))
+		--ConsolePrint("Left shop,  Journal = " .. tostring(JournalValue) .. "  Shop = " .. tostring(ShopValue))
 		for i = 1, #SellableItems do
 			local item = SellableItems[i]
-			local BeforeShop = ShopState.Sellable_Snapshot[item.Name] or 0
+			local BeforeShop = ShopState.SellableSnapshot[item.Name] or 0
 			local AfterShop = ReadByte(Save + item.Address)
 			SoldItems[item.Name] = (SoldItems[item.Name] or 0) + (BeforeShop - AfterShop)
 			if SoldItems[item.Name] > 0 and BeforeShop - AfterShop > 0 then
 				SendToApClient(MessageTypes.SoldItems, {item.Name, SoldItems[item.Name]})
 			end
-			ConsolePrint(item.Name .. " = " .. tostring(SoldItems[item.Name]))
+			--ConsolePrint(item.Name .. " = " .. tostring(SoldItems[item.Name]))
 		end
 		ShopState.Active = false
-		ShopState.Sellable_Snapshot = {}
+		ShopState.SellableSnapshot = {}
 	end
 end
 
@@ -750,9 +748,9 @@ function APCommunication()
 	LocationHandler:CheckLevelLocations()
 	LocationHandler:CheckWeaponAbilities()
 	LocationHandler:CheckWorldLocations()
-	if not VictorySent and (Framecount % OneSecond) == 0 then
+	if not VictorySent and (FrameCount % OneSecond) == 0 then
 		GoalGame()
-	elseif VictorySent and Goal >= 0 and Goal <= 3 and not VictoryReceived and (Framecount % FiveSeconds) == 0 then
+	elseif VictorySent and Goal >= 0 and Goal <= 3 and not VictoryReceived and (FrameCount % FiveSeconds) == 0 then
 		SendToApClient(MessageTypes.Victory, {"Victory"})
 	end
 
@@ -772,7 +770,7 @@ function _OnInit()
 	LocationDefs:FormLevels()
 	LocationDefs:WeaponSlots()
 	LocationDefs:TornPageLocks()
-	worldTables = {
+	WorldTables = {
 		[2]  = Worlds.TT_Checks,
 		[4]  = Worlds.HB_Checks,
 		[5]  = Worlds.BC_Checks,
@@ -842,22 +840,22 @@ function _OnFrame()
 			ConsolePrint("Error reading Framerate")
 		end
 	end
-	Framecount = Framecount + 1
-	if Framecount >= FiveSeconds then
-		Framecount = 0
+	FrameCount = FrameCount + 1
+	if FrameCount >= FiveSeconds then
+		FrameCount = 0
 	end
-	if not gameStarted and (Framecount % QuarterSecond) == 0 then
+	if not GameStarted and (FrameCount % QuarterSecond) == 0 then
 		local connected =  ConnectToApClient()
 
 		if connected then
-			connectionInitialized = true
-			gameStarted = true
+			ConnectionInitialized = true
+			GameStarted = true
 		end
 		return
 	end
 	IsInShop()
 	PCInteracted = ReadByte(Save + 0x1D27) & 0x1 << 3 > 0
-	if gameStarted and PCInteracted then
+	if GameStarted and PCInteracted then
 		if not HandshakeSent then
 			SendToApClient(MessageTypes.Handshake, {"Requesting Handshake"})
 			HandshakeSent = true
@@ -868,10 +866,12 @@ function _OnFrame()
 		else
 			RoomSaveTask:GetRoomChange()
 			ItemHandler:RemoveAbilities()
-			if (Framecount % HalfSecond) == 0 then
+			if (FrameCount % HalfSecond) == 0 then
 				ProcessNotification()
 			end
-			ItemHandler:VerifyInventory()
+			if not ShopState.Active then
+				ItemHandler:VerifyInventory()
+			end
 			if DeathlinkEnabled then
 				Deathlink()
 			end

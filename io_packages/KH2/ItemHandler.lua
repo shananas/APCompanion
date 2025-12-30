@@ -6,7 +6,7 @@ local SoraBack = 0x25D8
 local SoraFront = 0x2546
 local SoraCurrentAbilitySlot = 0x25D8
 local SoraBufferSlots = { [0x2546] = true, [0x2548] = true, [0x254A] = true, [0x254C] = true }
-local SoraEquippedKeyladeSlots = { 0x24F0, 0x32F4, 0x339C, 0x33D4, }
+local SoraEquippedKeybladeSlots = { 0x24F0, 0x32F4, 0x339C, 0x33D4, }
 
 local GrowthSlots = {
     ["High Jump"] = 0x25DA,
@@ -68,8 +68,8 @@ function ItemHandler:GiveItem(value, verify)
     else
         if value.Type == "Keyblade" then
             local amount = ItemsReceived[value.Name]
-            for i = 1, #SoraEquippedKeyladeSlots do
-                if ReadShort(Save + SoraEquippedKeyladeSlots[i]) == value.ID then
+            for i = 1, #SoraEquippedKeybladeSlots do
+                if ReadShort(Save + SoraEquippedKeybladeSlots[i]) == value.ID then
                     amount = amount - 1
                     if amount <= 0 then
                         break
@@ -138,7 +138,7 @@ function ItemHandler:GiveAbility(value)
     if value.Ability == "Sora" then
         if GrowthSlots[value.Name] then
             local equipped = ReadShort(Save + GrowthSlots[value.Name]) & 0x8000
-            WriteShort(Save + GrowthSlots[value.Name], SoraGrowthReceived[value.Name].current | equipped)
+            WriteShort(Save + GrowthSlots[value.Name], SoraGrowthReceived[value.Name].Current | equipped)
         else
             local slot
             for i = #SoraAbilitiesReceived, 1, -1 do
@@ -210,22 +210,22 @@ end
 function ItemHandler:VerifyInventory()
     local ItemsPerFrame = 3
     for i = 1, ItemsPerFrame do
-        local item = items[VerifyIndex]
+        local item = Items[VerifyIndex]
         if not item then
             VerifyIndex = 14 --Skip ansem reports since they currently dont do anything
             return
         end
-        local ReceivedAmount = ItemsReceived[item.Name] or 0
+        local receivedAmount = ItemsReceived[item.Name] or 0
         if item.Name == "Torn Page" then
-            local TornPagesRedeemed = 0
-            for i = 1, #PoohProgress do
-            	if (ReadByte(Save + PoohProgress[i].Address) & (0x1 << PoohProgress[i].BitIndex)) > 0 then
-            		TornPagesRedeemed = TornPagesRedeemed + 1
+            local tornPagesRedeemed = 0
+            for j = 1, #PoohProgress do
+            	if (ReadByte(Save + PoohProgress[j].Address) & (0x1 << PoohProgress[j].BitIndex)) > 0 then
+            		tornPagesRedeemed = tornPagesRedeemed + 1
             	end
             end
-            ItemsReceived[item.Name] = math.max(0, math.min(TornPagesReceived - TornPagesRedeemed, 255))
+            ItemsReceived[item.Name] = math.max(0, math.min(TornPagesReceived - tornPagesRedeemed, 255))
         end
-        if ReceivedAmount > 0 then
+        if receivedAmount > 0 then
             ItemHandler:GiveItem(item, true)
         else
             if not item.Bitmask then

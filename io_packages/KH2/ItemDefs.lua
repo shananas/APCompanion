@@ -1,7 +1,7 @@
 local ItemDefs = {}
 
 function ItemDefs:DefineItems()
-    items = {
+    Items = {
         -- Ansem Reports
         {ID = 226, Name = "Secret Ansem's Report 1",  Type = "Report", Address = 0x36C4, Bitmask = 6},
         {ID = 227, Name = "Secret Ansem's Report 2",  Type = "Report", Address = 0x36C4, Bitmask = 7},
@@ -211,11 +211,11 @@ function ItemDefs:DefineItems()
         {ID = 367, Name = "Lucky Emblem",             Type = "Wincon", Address = 0x3641}, --letter item
         {ID = 461, Name = "Bounty",                   Type = "Wincon", Address = 0x365E}, --Dummy 14
     }
-  return items
+  return Items
 end
 
 function ItemDefs:DefineAbilities()
-    abilities = {
+    Abilities = {
         --Movement
         {ID = 94,  Name = "High Jump",             Ability = "Sora", Type = "Ability", Address = 0x05E},
         {ID = 98,  Name = "Quick Run",             Ability = "Sora", Type = "Ability", Address = 0x062},
@@ -338,56 +338,26 @@ function ItemDefs:DefineAbilities()
         {ID = 597, Name = "Goofy Protectra",       Ability = "Goofy", Type = "Ability", Address = 0x255},
         {ID = 598, Name = "Goofy Protectga",       Ability = "Goofy", Type = "Ability", Address = 0x256},
     }
-    return abilities
+    return Abilities
 end
 
 function ItemDefs:SellableItems()
     SellableItems = {
-        --Keyblades
-        {ID = 42,  Name = "Oathkeeper",               Type = "Keyblade", Address = 0x35A2},
-        {ID = 43,  Name = "Oblivion",                 Type = "Keyblade", Address = 0x35A3},
-        {ID = 480, Name = "Star Seeker",              Type = "Keyblade", Address = 0x367B},
-        {ID = 481, Name = "Hidden Dragon",            Type = "Keyblade", Address = 0x367C},
-        {ID = 484, Name = "Hero's Crest",             Type = "Keyblade", Address = 0x367F},
-        {ID = 485, Name = "Monochrome",               Type = "Keyblade", Address = 0x3680},
-        {ID = 486, Name = "Follow the Wind",          Type = "Keyblade", Address = 0x3681},
-        {ID = 487, Name = "Circle of Life",           Type = "Keyblade", Address = 0x3682},
-        {ID = 488, Name = "Photon Debugger",          Type = "Keyblade", Address = 0x3683},
-        {ID = 489, Name = "Gull Wing",                Type = "Keyblade", Address = 0x3684},
-        {ID = 490, Name = "Rumbling Rose",            Type = "Keyblade", Address = 0x3685},
-        {ID = 491, Name = "Guardian Soul",            Type = "Keyblade", Address = 0x3686},
-        {ID = 492, Name = "Wishing Lamp",             Type = "Keyblade", Address = 0x3687},
-        {ID = 493, Name = "Decisive Pumpkin",         Type = "Keyblade", Address = 0x3688},
-        {ID = 494, Name = "Sleeping Lion",            Type = "Keyblade", Address = 0x3689},
-        {ID = 495, Name = "Sweet Memories",           Type = "Keyblade", Address = 0x368A},
-        {ID = 496, Name = "Mysterious Abyss",         Type = "Keyblade", Address = 0x368B},
-        {ID = 543, Name = "Two Become One",           Type = "Keyblade", Address = 0x3698},
-        {ID = 497, Name = "Fatal Crest",              Type = "Keyblade", Address = 0x368C},
-        {ID = 498, Name = "Bond of Flame",            Type = "Keyblade", Address = 0x368D},
-        {ID = 499, Name = "Fenrir",                   Type = "Keyblade", Address = 0x368E},
-        {ID = 500, Name = "Ultima Weapon",            Type = "Keyblade", Address = 0x368F},
-        {ID = 544, Name = "Winner's Proof",           Type = "Keyblade", Address = 0x3699},
-        {ID = 71,  Name = "Pureblood",                Type = "Keyblade", Address = 0x35BF},
-
         --Staves
         {ID = 546, Name = "Centurion+",               Type = "Staff", Address = 0x369B},
-        {ID = 150, Name = "Meteor Staff",             Type = "Staff", Address = 0x35F1},
         {ID = 155, Name = "Nobody Lance",             Type = "Staff", Address = 0x35F6},
         {ID = 549, Name = "Precious Mushroom",        Type = "Staff", Address = 0x369E},
         {ID = 550, Name = "Precious Mushroom+",       Type = "Staff", Address = 0x369F},
         {ID = 551, Name = "Premium Mushroom",         Type = "Staff", Address = 0x36A0},
-        {ID = 154, Name = "Rising Dragon",            Type = "Staff", Address = 0x35F5},
         {ID = 503, Name = "Save The Queen+",          Type = "Staff", Address = 0x3692},
         {ID = 156, Name = "Shaman's Relic",           Type = "Staff", Address = 0x35F7},
 
         --Shields
         {ID = 146, Name = "Akashic Record",           Type = "Shield", Address = 0x35ED},
         {ID = 553, Name = "Frozen Pride+",            Type = "Shield", Address = 0x36A2},
-        {ID = 145, Name = "Genji Shield",             Type = "Shield", Address = 0x35EC},
         {ID = 556, Name = "Majestic Mushroom",        Type = "Shield", Address = 0x36A5},
         {ID = 557, Name = "Majestic Mushroom+",       Type = "Shield", Address = 0x36A6},
         {ID = 147, Name = "Nobody Guard",             Type = "Shield", Address = 0x35EE},
-        {ID = 141, Name = "Ogre Shield",              Type = "Shield", Address = 0x35E8},
         {ID = 504, Name = "Save The King+",           Type = "Shield", Address = 0x3693},
         {ID = 558, Name = "Ultimate Mushroom",        Type = "Shield", Address = 0x36A7},
 
@@ -399,8 +369,6 @@ function ItemDefs:SellableItems()
         {ID = 39,  Name = "Skillful Ring",            Type = "Accessories", Address = 0x35A0},
         {ID = 11,  Name = "Expert's Ring",            Type = "Accessories", Address = 0x358A},
         {ID = 34,  Name = "Master's Ring",            Type = "Accessories", Address = 0x359B},
-        {ID = 52,  Name = "Cosmic Ring",              Type = "Accessories", Address = 0x35AD},
-        {ID = 599, Name = "Executive's Ring",         Type = "Accessories", Address = 0x36B5},
         {ID = 12,  Name = "Sardonyx Ring",            Type = "Accessories", Address = 0x358B},
         {ID = 13,  Name = "Tourmaline Ring",          Type = "Accessories", Address = 0x358C},
         {ID = 14,  Name = "Aquamarine Ring",          Type = "Accessories", Address = 0x358D},
@@ -415,16 +383,12 @@ function ItemDefs:SellableItems()
         {ID = 46,  Name = "Fencer Earring",           Type = "Accessories", Address = 0x35A7},
         {ID = 47,  Name = "Mage Earring",             Type = "Accessories", Address = 0x35A8},
         {ID = 48,  Name = "Slayer Earring",           Type = "Accessories", Address = 0x35AC},
-        {ID = 53,  Name = "Medal",                    Type = "Accessories", Address = 0x35B0},
         {ID = 35,  Name = "Moon Amulet",              Type = "Accessories", Address = 0x359C},
         {ID = 36,  Name = "Star Charm",               Type = "Accessories", Address = 0x359E},
-        {ID = 56,  Name = "Cosmic Arts",              Type = "Accessories", Address = 0x35B1},
         {ID = 57,  Name = "Shadow Archive",           Type = "Accessories", Address = 0x35B2},
         {ID = 58,  Name = "Shadow Archive+",          Type = "Accessories", Address = 0x35B7},
         {ID = 64,  Name = "Full Bloom",               Type = "Accessories", Address = 0x35B9},
         {ID = 66,  Name = "Full Bloom+",              Type = "Accessories", Address = 0x35BB},
-        {ID = 65,  Name = "Draw Ring",                Type = "Accessories", Address = 0x35BA},
-        {ID = 63,  Name = "Lucky Ring",               Type = "Accessories", Address = 0x35B8},
 
         --Armor
         {ID = 67,  Name = "Elven Bandana",            Type = "Armor", Address = 0x35BC},
@@ -433,7 +397,6 @@ function ItemDefs:SellableItems()
         {ID = 79,  Name = "Gaia Belt",                Type = "Armor", Address = 0x35CA},
         {ID = 69,  Name = "Power Band",               Type = "Armor", Address = 0x35BE},
         {ID = 70,  Name = "Buster Band",              Type = "Armor", Address = 0x35C6},
-        {ID = 111, Name = "Cosmic Belt",              Type = "Armor", Address = 0x35D1},
         {ID = 173, Name = "Fire Bangle",              Type = "Armor", Address = 0x35D7},
         {ID = 174, Name = "Fira Bangle",              Type = "Armor", Address = 0x35D8},
         {ID = 197, Name = "Firaga Bangle",            Type = "Armor", Address = 0x35D9},
@@ -452,15 +415,12 @@ function ItemDefs:SellableItems()
         {ID = 297, Name = "Dark Anklet",              Type = "Armor", Address = 0x35FB},
         {ID = 298, Name = "Midnight Anklet",          Type = "Armor", Address = 0x35FC},
         {ID = 299, Name = "Chaos Anklet",             Type = "Armor", Address = 0x35FD},
-        {ID = 305, Name = "Champion Belt",            Type = "Armor", Address = 0x3603},
         {ID = 301, Name = "Abas Chain",               Type = "Armor", Address = 0x35FF},
         {ID = 302, Name = "Aegis Chain",              Type = "Armor", Address = 0x3600},
         {ID = 303, Name = "Acrisius",                 Type = "Armor", Address = 0x3601},
         {ID = 307, Name = "Acrisius+",                Type = "Armor", Address = 0x3605},
-        {ID = 308, Name = "Cosmic Chain",             Type = "Armor", Address = 0x3606},
         {ID = 306, Name = "Petite Ribbon",            Type = "Armor", Address = 0x3604},
         {ID = 304, Name = "Ribbon",                   Type = "Armor", Address = 0x3602},
-        {ID = 157, Name = "Grand Ribbon",             Type = "Armor", Address = 0x35D4},
     }
 end
 
