@@ -559,7 +559,7 @@ function CheckBountiesObtained()
 			if address == FormSummonLevels[i] then
 				if ReadByte(Save + address) >= 7 then
 					BountiesFinished = BountiesFinished + 1
-					ConsolePrint("Form/Summon" .. tostring(address))
+					ConsolePrint("Form/Summon: " .. tostring(address))
 					counted = true
 				end
 				break
