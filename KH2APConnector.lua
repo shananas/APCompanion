@@ -845,17 +845,19 @@ function _OnFrame()
 		else
 			RoomSaveTask:GetRoomChange()
 			ItemHandler:RemoveAbilities()
-			if (FrameCount % HalfSecond) == 0 then
-				ProcessNotification()
-			end
 			if not ShopState.Active then
 				ItemHandler:VerifyInventory()
+			end
+			if (FrameCount % QuarterSecond) == 0 then
+				APCommunication()
+				ProcessItemQueue()
+			end
+			if (FrameCount % HalfSecond) == 0 then
+				ProcessNotification()
 			end
 			if DeathlinkEnabled then
 				Deathlink()
 			end
-			APCommunication()
-			ProcessItemQueue()
 		end
 	end
 end
