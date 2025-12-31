@@ -244,20 +244,18 @@ function HandleMessage(msg)
 		local finalmsg = msg.values[1]:sub(2,-2)
 		local parsed = {}
 		for num in finalmsg:gmatch("%d+") do
-			table.insert(parsed, tonumber(num))
+			parsed[#parsed + 1] = tonumber(num)
 		end
 
-		local exists = false
-		for i = 1, #BountyBosses do
-			if BountyBosses[i][1] == parsed[1] and BountyBosses[i][2] == parsed[2] then
-				exists = true
-				break
-			end
-		end
-		if not exists then
-			table.insert(BountyBosses, parsed)
+		local address = parsed[1]
+		local bit = parsed[2]
+
+		BountyBosses[address] = BountyBosses[address] or {}
+
+		if BountyBosses[address][bit] then
+			ConsolePrint("Duplicate bounty received address = " .. tostring(address) .. " bit = ".. tostring(bit))
 		else
-			ConsolePrint("Bounty already in list skipping" .. tostring(parsed[1]) .. ", " .. tostring(parsed[2]))
+			BountyBosses[address][bit] = true
 		end
 
 	elseif msg.type == MessageTypes.SoldItems then
@@ -555,19 +553,25 @@ end
 
 function CheckBountiesObtained()
 	BountiesFinished = 0
-	for i = 1, #BountyBosses do
+	for address, bits in pairs(BountyBosses) do
 		local counted = false
-		for j = 1, #FormSummonLevels do
-			if BountyBosses[i][1] == FormSummonLevels[j] then
-				if ReadByte(Save + BountyBosses[i][1]) >= 7 then
+		for i = 1, #FormSummonLevels do
+			if address == FormSummonLevels[i] then
+				if ReadByte(Save + address) >= 7 then
 					BountiesFinished = BountiesFinished + 1
+					ConsolePrint("Form/Summon" .. tostring(address))
 					counted = true
-					break
 				end
+				break
 			end
 		end
-		if not counted and (ReadByte(Save + BountyBosses[i][1]) & (0x1 << BountyBosses[i][2])) > 0 then
-			BountiesFinished = BountiesFinished + 1
+		if not counted and bits then
+			for bit, _ in pairs(bits) do
+				if ((ReadByte(Save + address) & (0x1 << bit)) > 0) then
+					BountiesFinished = BountiesFinished + 1
+					ConsolePrint("Superboss: " .. tostring(address) .. ", " .. tostring(bit))
+				end
+			end
 		end
 	end
 end
