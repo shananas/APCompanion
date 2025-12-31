@@ -6,7 +6,7 @@
 ---------------------------------------------------
 
 local socket = require("socket")
-ItemHandler = require("KH2.ItemHandler")
+local ItemHandler = require("KH2.ItemHandler")
 local ItemDefs = require("KH2.ItemDefs")
 local LocationDefs = require("KH2.LocationDefs")
 local LocationHandler = require("KH2.LocationHandler")
@@ -478,12 +478,10 @@ function GoalGame()
             if FinalXemnasRequired then
                 if FinalXemnasBeaten then
 					SendToApClient(MessageTypes.Victory, {"Victory"})
-					ConsolePrint("Goal==0 & Final Xemnas")
 					VictorySent = true
 				end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
-				ConsolePrint("Goal==0")
 				VictorySent = true
 			end
 		end
@@ -501,12 +499,10 @@ function GoalGame()
             if FinalXemnasRequired then
                 if FinalXemnasBeaten then
 					SendToApClient(MessageTypes.Victory, {"Victory"})
-					ConsolePrint("Goal==1 & Final Xemnas")
 					VictorySent = true
 				end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
-				ConsolePrint("Goal==1")
 				VictorySent = true
 			end
 		end
@@ -525,16 +521,10 @@ function GoalGame()
             if FinalXemnasRequired then
                 if FinalXemnasBeaten then
 					SendToApClient(MessageTypes.Victory, {"Victory"})
-					ConsolePrint("Goal==2 & Final Xemnas")
-					ConsolePrint(tostring(BountiesFinished))
-					ConsolePrint(tostring(BountyRequired))
 					VictorySent = true
                 end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
-				ConsolePrint("Goal==2")
-				ConsolePrint(tostring(BountiesFinished))
-				ConsolePrint(tostring(BountyRequired))
 				VictorySent = true
 			end
 		end
@@ -553,16 +543,10 @@ function GoalGame()
             if FinalXemnasRequired then
                 if FinalXemnasBeaten then
 					SendToApClient(MessageTypes.Victory, {"Victory"})
-					ConsolePrint("Goal==3 & Final Xemnas")
-					ConsolePrint(tostring(BountiesFinished))
-					ConsolePrint(tostring(BountyRequired))
 					VictorySent = true
                 end
 			else
 				SendToApClient(MessageTypes.Victory, {"Victory"})
-				ConsolePrint("Goal==3")
-				ConsolePrint(tostring(BountiesFinished))
-				ConsolePrint(tostring(BountyRequired))
 				VictorySent = true
 			end
         end
@@ -577,7 +561,6 @@ function CheckBountiesObtained()
 			if BountyBosses[i][1] == FormSummonLevels[j] then
 				if ReadByte(Save + BountyBosses[i][1]) >= 7 then
 					BountiesFinished = BountiesFinished + 1
-					ConsolePrint("Form/Summon" .. tostring(BountyBosses[i][1]))
 					counted = true
 					break
 				end
@@ -585,12 +568,8 @@ function CheckBountiesObtained()
 		end
 		if not counted and (ReadByte(Save + BountyBosses[i][1]) & (0x1 << BountyBosses[i][2])) > 0 then
 			BountiesFinished = BountiesFinished + 1
-			ConsolePrint("Superboss" .. tostring(BountyBosses[i][1]) .. ", " .. tostring(BountyBosses[i][2]))
 		end
 	end
-	--ConsolePrint("CheckBountiesObtained")
-	--ConsolePrint(tostring(BountiesFinished))
-	--ConsolePrint(tostring(BountyRequired))
 end
 
 function CurrentWorldLocation()
@@ -712,16 +691,13 @@ function IsInShop()
 	local InShop = (JournalValue ~= -1 and ShopValue == 5) or (JournalValue == -1 and ShopValue == 10)
 
 	if InShop and not ShopState.Active then
-		--ConsolePrint("Entered shop,  Journal = " .. tostring(JournalValue) .. "  Shop = " .. tostring(ShopValue))
 		ShopState.Active = true
 		ShopState.SellableSnapshot = {}
 		for i = 1, #SellableItems do
 			local Amount = ReadByte(Save + SellableItems[i].Address)
 			ShopState.SellableSnapshot[SellableItems[i].Name] = Amount
-			--ConsolePrint(SellableItems[i].Name .. " = " .. tostring(ShopState.SellableSnapshot[SellableItems[i].Name]))
 		end
 	elseif not InShop and ShopState.Active then
-		--ConsolePrint("Left shop,  Journal = " .. tostring(JournalValue) .. "  Shop = " .. tostring(ShopValue))
 		for i = 1, #SellableItems do
 			local item = SellableItems[i]
 			local BeforeShop = ShopState.SellableSnapshot[item.Name] or 0
@@ -730,7 +706,6 @@ function IsInShop()
 			if SoldItems[item.Name] > 0 and BeforeShop - AfterShop > 0 then
 				SendToApClient(MessageTypes.SoldItems, {item.Name, SoldItems[item.Name]})
 			end
-			--ConsolePrint(item.Name .. " = " .. tostring(SoldItems[item.Name]))
 		end
 		ShopState.Active = false
 		ShopState.SellableSnapshot = {}
