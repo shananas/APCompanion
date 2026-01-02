@@ -361,7 +361,7 @@ end
 
 function ProcessItemQueue()
 	local Sent = 0
-	while Sent < 100 and #ItemQueue > 0 do
+	while Sent < 1000 and #ItemQueue > 0 do
 		local item = ItemQueue[1]
 		if ReadByte(Pause) == 0  and ReadByte(FadeStatus) == 0 and ReadByte(Cntrl) == 0 and
 		ReadLong(PlayerGaugePointer) ~= 0 and ReadLong(ReadLong(PlayerGaugePointer)+0x88, true) ~= 0 then
