@@ -69,9 +69,10 @@ MessageTypes = {
 	ChestsOpened = 10,
 	ReceiveItem = 11,
 	RequestAllItems = 12,
-	Handshake  = 13,
-	Victory = 19,
-	Closed = 20
+	GiveProofs = 17,
+	FinalXemnasDefeated = 18,
+	Handshake = 19,
+	Closed = 20,
 }
 HandshakeSent = false
 HandshakeReceived = false
@@ -119,13 +120,6 @@ MaxFinalLevel = { Value = 1 }
 MaxSummonLevel = { Value = 1 }
 
 ProofsGiven = false
-FinalXemnasRequired = true
-FinalXemnasBeaten = false
-Goal = -1
-LuckyEmblemsRequired = 100
-BountyRequired = 100
-BountiesFinished = 0
-BountyBosses = {}
 FormSummonLevels = {
 	0x32F6,
 	0x332E,
@@ -137,7 +131,6 @@ FormSummonLevels = {
 DeathlinkEnabled = false
 ReceivedDeath = false
 VictorySent = false
-VictoryReceived = false
 LastReceivedIndex = -1
 LastWorld = -1
 CurrentWorld = -1
@@ -290,8 +283,13 @@ function HandleMessage(msg)
 	elseif msg.type == MessageTypes.NotificationMessage then
 		table.insert(NotificationMessage, { msg.values[1], msg.values[2] })
 
-	elseif msg.type == MessageTypes.Victory then
-		VictoryReceived = true
+	elseif msg.type == MessageTypes.GiveProofs then
+		ItemsReceived["Proof of Connection"] = 1
+		ItemsReceived["Proof of Nonexistence"] = 1
+		ItemsReceived["Proof of Peace"] = 1
+		WriteByte(Save + 0x36B2, 1)
+		WriteByte(Save + 0x36B3, 1)
+		WriteByte(Save + 0x36B4, 1)
 
 	end
 end
@@ -464,118 +462,6 @@ function textToKHSCII(value)
 	return returnArr
 end
 
-function GoalGame()
-    if FinalXemnasRequired then
-        if not FinalXemnasBeaten and ReadByte(Save + Worlds.TWTNW_Checks[37].Address) & 0x1 << Worlds.TWTNW_Checks[37].BitIndex > 0 then
-            FinalXemnasBeaten = true
-		end
-	end
-    -- three proofs
-    if Goal == 0 then
-        if ReadByte(Save + 0x36B2) > 0 and ReadByte(Save + 0x36B3) > 0 and ReadByte(Save + 0x36B4) > 0 then
-            if FinalXemnasRequired then
-                if FinalXemnasBeaten then
-					SendToApClient(MessageTypes.Victory, {"Victory"})
-					VictorySent = true
-				end
-			else
-				SendToApClient(MessageTypes.Victory, {"Victory"})
-				VictorySent = true
-			end
-		end
-    elseif Goal == 1 then
-        if ReadByte(Save + 0x3641) >= LuckyEmblemsRequired then
-            if not ProofsGiven then
-                WriteByte(Save + 0x36B2, 1)
-                WriteByte(Save + 0x36B3, 1)
-                WriteByte(Save + 0x36B4, 1)
-				ItemsReceived["Proof of Connection"] = 1
-				ItemsReceived["Proof of Nonexistence"] = 1
-				ItemsReceived["Proof of Peace"] = 1
-				ProofsGiven = true
-			end
-            if FinalXemnasRequired then
-                if FinalXemnasBeaten then
-					SendToApClient(MessageTypes.Victory, {"Victory"})
-					VictorySent = true
-				end
-			else
-				SendToApClient(MessageTypes.Victory, {"Victory"})
-				VictorySent = true
-			end
-		end
-    elseif Goal == 2 then
-		CheckBountiesObtained()
-        if BountiesFinished >= BountyRequired then
-            if not ProofsGiven then
-                WriteByte(Save + 0x36B2, 1)
-                WriteByte(Save + 0x36B3, 1)
-                WriteByte(Save + 0x36B4, 1)
-				ItemsReceived["Proof of Connection"] = 1
-				ItemsReceived["Proof of Nonexistence"] = 1
-				ItemsReceived["Proof of Peace"] = 1
-				ProofsGiven = true
-			end
-            if FinalXemnasRequired then
-                if FinalXemnasBeaten then
-					SendToApClient(MessageTypes.Victory, {"Victory"})
-					VictorySent = true
-                end
-			else
-				SendToApClient(MessageTypes.Victory, {"Victory"})
-				VictorySent = true
-			end
-		end
-    elseif Goal == 3 then
-		CheckBountiesObtained()
-        if BountiesFinished >= BountyRequired and ReadByte(Save + 0x3641) >= LuckyEmblemsRequired then
-            if not ProofsGiven then
-                WriteByte(Save + 0x36B2, 1)
-                WriteByte(Save + 0x36B3, 1)
-                WriteByte(Save + 0x36B4, 1)
-				ItemsReceived["Proof of Connection"] = 1
-				ItemsReceived["Proof of Nonexistence"] = 1
-				ItemsReceived["Proof of Peace"] = 1
-				ProofsGiven = true
-			end
-            if FinalXemnasRequired then
-                if FinalXemnasBeaten then
-					SendToApClient(MessageTypes.Victory, {"Victory"})
-					VictorySent = true
-                end
-			else
-				SendToApClient(MessageTypes.Victory, {"Victory"})
-				VictorySent = true
-			end
-        end
-	end
-end
-
-function CheckBountiesObtained()
-	BountiesFinished = 0
-	for address, bits in pairs(BountyBosses) do
-		local counted = false
-		for i = 1, #FormSummonLevels do
-			if address == FormSummonLevels[i] then
-				if ReadByte(Save + address) >= 7 then
-					BountiesFinished = BountiesFinished + 1
-					ConsolePrint("Form/Summon: " .. tostring(address))
-					counted = true
-				end
-				break
-			end
-		end
-		if not counted and bits then
-			for bit, _ in pairs(bits) do
-				if ((ReadByte(Save + address) & (0x1 << bit)) > 0) then
-					BountiesFinished = BountiesFinished + 1
-					ConsolePrint("Superboss: " .. tostring(address) .. ", " .. tostring(bit))
-				end
-			end
-		end
-	end
-end
-
 function CurrentWorldLocation()
     CurrentWorld = World
 	if LastWorld ~= CurrentWorld then
@@ -727,11 +613,6 @@ function APCommunication()
 	LocationHandler:CheckLevelLocations()
 	LocationHandler:CheckWeaponAbilities()
 	LocationHandler:CheckWorldLocations()
-	if not VictorySent and (FrameCount % OneSecond) == 0 then
-		GoalGame()
-	elseif VictorySent and Goal >= 0 and Goal <= 3 and not VictoryReceived and (FrameCount % FiveSeconds) == 0 then
-		SendToApClient(MessageTypes.Victory, {"Victory"})
-	end
 
     local messages = ReceiveFromApClient()
     for i = 1, #messages do
@@ -845,6 +726,10 @@ function _OnFrame()
 		else
 			RoomSaveTask:GetRoomChange()
 			ItemHandler:RemoveAbilities()
+			if not VictorySent and World == 18 and (ReadByte(Save + 0x1ED8) & (0x1 << 1)) > 0 then
+				SendToApClient(MessageTypes.FinalXemnasDefeated, {"Final Xemnas Defeated"})
+				VictorySent = true
+			end
 			if not ShopState.Active then
 				ItemHandler:VerifyInventory()
 			end
