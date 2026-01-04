@@ -55,24 +55,21 @@ Kh2sciiDict = {
 }
 
 MessageTypes = {
-	Invalid = -1,
-	Test = 0,
-	WorldLocationChecked = 1,
-	LevelChecked = 2,
-	KeybladeChecked = 3,
-	BountyList = 4,
-	SlotData = 5,
-	Deathlink = 6,
-	SoldItems = 7,
-	NotificationType = 8,
-	NotificationMessage = 9,
-	ChestsOpened = 10,
-	ReceiveItem = 11,
-	RequestAllItems = 12,
-	GiveProofs = 17,
-	FinalXemnasDefeated = 18,
-	Handshake = 19,
-	Closed = 20,
+    WorldLocationChecked = 1,
+    LevelChecked = 2,
+    KeybladeSlotChecked = 3,
+    CurrentWorldInt = 4,
+    FinalXemnasDefeated = 5,
+    SendProofs = 6,
+    SoldItems = 7,
+    ChestsOpened = 8,
+    Deathlink = 9,
+    NotificationType = 10,
+    NotificationMessage = 11,
+    GiveItem = 12,
+    RequestAllItems = 13,
+    Handshake = 19,
+    Closed = 20,
 }
 HandshakeSent = false
 HandshakeReceived = false
@@ -185,21 +182,7 @@ function HandleMessage(msg)
 		return
 	end
 
-	if msg.type == MessageTypes.Test then
-		ConsolePrint(tostring(msg.values[1]))
-		local _item
-		ConsolePrint(tostring(msg.values[2]))
-		if msg.values[2] ~= nil then
-			_item = getAbilityById(tonumber(msg.values[1]), msg.values[2])
-		else
-			_item = getItemById(tonumber(msg.values[1]))
-		end
-		if _item ~= nil then
-			ItemHandler:Receive(_item)
-		end
-	end
-
-	if msg.type == MessageTypes.ReceiveItem then
+	if msg.type == MessageTypes.GiveItem then
 		ConsolePrint("Receiving single item")
 		local _item
 		if tonumber(msg.values[3]) > LastReceivedIndex then
@@ -222,35 +205,6 @@ function HandleMessage(msg)
 			ReceivedDeath = true
 		end
 
-	elseif msg.type == MessageTypes.SlotData then
-		if tostring(msg.values[1]) == "Final Xemnas" then
-			FinalXemnasRequired = (tonumber(msg.values[2]) == 1)
-		elseif tostring(msg.values[1]) == "Goal" then
-			Goal = tonumber(msg.values[2])
-		elseif tostring(msg.values[1]) == "LuckyEmblemsRequired" then
-			LuckyEmblemsRequired = tonumber(msg.values[2])
-		elseif tostring(msg.values[1]) == "BountyRequired" then
-			BountyRequired = tonumber(msg.values[2])
-		end
-
-	elseif msg.type == MessageTypes.BountyList then
-		local finalmsg = msg.values[1]:sub(2,-2)
-		local parsed = {}
-		for num in finalmsg:gmatch("%d+") do
-			parsed[#parsed + 1] = tonumber(num)
-		end
-
-		local address = parsed[1]
-		local bit = parsed[2]
-
-		BountyBosses[address] = BountyBosses[address] or {}
-
-		if BountyBosses[address][bit] then
-			ConsolePrint("Duplicate bounty received address = " .. tostring(address) .. " bit = ".. tostring(bit))
-		else
-			BountyBosses[address][bit] = true
-		end
-
 	elseif msg.type == MessageTypes.SoldItems then
 		SoldItems[msg.values[1]] = tonumber(msg.values[2])
 
@@ -260,7 +214,7 @@ function HandleMessage(msg)
 
 	elseif msg.type == MessageTypes.Handshake then
 		HandshakeReceived = true
-		SendToApClient(MessageTypes.SlotData, {World})
+		SendToApClient(MessageTypes.CurrentWorldInt, {World})
 		if msg.values[1] == "True" then
 			ConsolePrint("Received handshake; Requesting items")
 			SendToApClient(MessageTypes.RequestAllItems, {"Requesting Items"})
@@ -276,13 +230,16 @@ function HandleMessage(msg)
 	elseif msg.type == MessageTypes.NotificationMessage then
 		table.insert(NotificationMessage, { msg.values[1], msg.values[2] })
 
-	elseif msg.type == MessageTypes.GiveProofs then
+	elseif msg.type == MessageTypes.SendProofs then
 		ItemsReceived["Proof of Connection"] = 1
 		ItemsReceived["Proof of Nonexistence"] = 1
 		ItemsReceived["Proof of Peace"] = 1
 		WriteByte(Save + 0x36B2, 1)
 		WriteByte(Save + 0x36B3, 1)
 		WriteByte(Save + 0x36B4, 1)
+		RoomSaveTask:StoreItem({ID = 593, Name = "Proof of Connection", Type = "Progression", Address = 0x36B2})
+		RoomSaveTask:StoreItem({ID = 594, Name = "Proof of Nonexistence", Type = "Progression", Address = 0x36B3})
+		RoomSaveTask:StoreItem({ID = 595, Name = "Proof of Peace", Type = "Progression", Address = 0x36B4})
 
 	end
 end
@@ -460,7 +417,7 @@ function CurrentWorldLocation()
 	if LastWorld ~= CurrentWorld then
 		LastWorld = CurrentWorld
 		LocationHandler:CheckChests()
-		SendToApClient(MessageTypes.SlotData, {CurrentWorld})
+		SendToApClient(MessageTypes.CurrentWorldInt, {CurrentWorld})
 	end
 end
 
@@ -719,7 +676,7 @@ function _OnFrame()
 		else
 			RoomSaveTask:GetRoomChange()
 			ItemHandler:RemoveAbilities()
-			if not VictorySent and World == 18 and (ReadByte(Save + 0x1ED8) & (0x1 << 1)) > 0 then
+			if not VictorySent and ((ReadByte(Save + 0x1ED9) & (0x1 << 0)) > 0 or (ReadByte(Save + 0x1ED8) & (0x1 << 1)) > 0) then
 				SendToApClient(MessageTypes.FinalXemnasDefeated, {"Final Xemnas Defeated"})
 				VictorySent = true
 			end

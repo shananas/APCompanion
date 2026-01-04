@@ -46,7 +46,7 @@ function LocationHandler:CheckWeaponAbilities()
         if not LocationsChecked[locationID] then
             if ReadByte(Save + ability.Address) > 0 then
                 LocationsChecked[locationID] = true
-                SendToApClient(MessageTypes.KeybladeChecked, {locationID})
+                SendToApClient(MessageTypes.KeybladeSlotChecked, {locationID})
             end
         end
     end
@@ -54,7 +54,7 @@ function LocationHandler:CheckWeaponAbilities()
         if not LocationsChecked[locationID] and ReadByte(Save + 0x06B2) == 0 then
             if (ReadByte(Save + ability.Address) & (0x1 << ability.BitIndex)) > 0 then
                 LocationsChecked[locationID] = true
-                SendToApClient(MessageTypes.KeybladeChecked, {locationID})
+                SendToApClient(MessageTypes.KeybladeSlotChecked, {locationID})
             end
         end
     end
