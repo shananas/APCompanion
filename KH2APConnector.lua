@@ -256,14 +256,7 @@ function HandleMessage(msg)
 
 
 	elseif msg.type == MessageTypes.ChestsOpened then
-		for _, worldNames in pairs (Worlds) do
-			for i = 1, #worldNames do
-				if worldNames[i].Name == msg.values[1] then
-					ChestsOpenedList[worldNames[i].Name] = true
-					return
-				end
-			end
-		end
+		ChestsOpenedList[tonumber(msg.values[1])] = true
 
 	elseif msg.type == MessageTypes.Handshake then
 		HandshakeReceived = true

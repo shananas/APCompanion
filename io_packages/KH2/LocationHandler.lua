@@ -4,20 +4,15 @@ function LocationHandler:CheckWorldLocations()
     local CurrentWorld = ReadByte(Now)
     local checks = WorldTables[CurrentWorld]
     if checks then
-        for i = 1, #checks do
-            local contained = false
-            for j = 1, #LocationsChecked do
-                if checks[i].Name == LocationsChecked[j] or ChestsOpenedList[checks[i].Name] then
-                    contained = true
-                    break
+        for locationID, check in pairs(checks) do
+            if not LocationsChecked[locationID] and not ChestsOpenedList[locationID] then
+                if (ReadByte(Save + check.Address) & (0x1 << check.BitIndex)) > 0 then
+                    LocationsChecked[locationID] = true
+                    if check.Chest then
+                        StoreChest(check)
+                    end
+                    SendToApClient(MessageTypes.WorldLocationChecked, {locationID})
                 end
-            end
-            if not contained and (ReadByte(Save + checks[i].Address) & (0x1 << checks[i].BitIndex)) > 0 then
-                table.insert(LocationsChecked, checks[i].Name)
-                if checks[i].Chest then
-                    StoreChest(checks[i])
-                end
-                SendToApClient(MessageTypes.WorldLocationChecked, {checks[i].Name})
             end
         end
     end
@@ -35,48 +30,33 @@ function LocationHandler:CheckLevelLocations()
     FormsLists = {ValorForm, WisdomForm, LimitForm, MasterForm, FinalForm, SummonLevels}
     FormLevels = {MaxValorLevel, MaxWisdomLevel, MaxLimitLevel, MaxMasterLevel, MaxFinalLevel, MaxSummonLevel}
     for i = 1, 6 do
-        local CurrentFormLevel = ReadByte(Save + FormsLists[i][i].Address)
+        local _, entry = next(FormsLists[i])
+        local CurrentFormLevel = ReadByte(Save + entry.Address)
         if CurrentFormLevel > FormLevels[i].Value then
             FormLevels[i].Value = CurrentFormLevel
-            SendToApClient(MessageTypes.LevelChecked, {FormLevels[i].Value, FormsLists[i][1].Name:match("^[^ ]+").."Level"})
+            SendToApClient(MessageTypes.LevelChecked, {FormLevels[i].Value, entry.Name:match("^[^ ]+").."Level"})
         elseif FormLevels[i].Value > CurrentFormLevel then
-            WriteByte(Save + FormsLists[i][i].Address, FormLevels[i].Value)
+            WriteByte(Save + entry.Address, FormLevels[i].Value)
         end
     end
 end
 
 function LocationHandler:CheckWeaponAbilities()
-    local contained = false
-    for i = 1, #WeaponAbilities do
-        for j = 1, #LocationsChecked do
-            if WeaponAbilities[i].Name == LocationsChecked[j] then
-                contained = true
-                break
+    for locationID, ability in pairs(WeaponAbilities) do
+        if not LocationsChecked[locationID] then
+            if ReadByte(Save + ability.Address) > 0 then
+                LocationsChecked[locationID] = true
+                SendToApClient(MessageTypes.KeybladeChecked, {locationID})
             end
         end
-        if not contained then
-            if ReadByte(Save + WeaponAbilities[i].Address) > 0 then
-                table.insert(LocationsChecked, WeaponAbilities[i].Name)
-                SendToApClient(MessageTypes.KeybladeChecked, {WeaponAbilities[i].Name})
+    end
+    for locationID, ability in pairs (FormWeaponAbilities) do
+        if not LocationsChecked[locationID] and ReadByte(Save + 0x06B2) == 0 then
+            if (ReadByte(Save + ability.Address) & (0x1 << ability.BitIndex)) > 0 then
+                LocationsChecked[locationID] = true
+                SendToApClient(MessageTypes.KeybladeChecked, {locationID})
             end
         end
-        contained = false
-	end
-
-    for i = 1, #FormWeaponAbilities do
-        for j = 1, #LocationsChecked do
-            if FormWeaponAbilities[i].Name == LocationsChecked[j] then
-                contained = true
-                break
-            end
-        end
-        if not contained and ReadByte(Save + 0x06B2) == 0 then
-            if (ReadByte(Save + FormWeaponAbilities[i].Address) & (0x1 << FormWeaponAbilities[i].BitIndex)) > 0 then
-                table.insert(LocationsChecked, FormWeaponAbilities[i].Name)
-                SendToApClient(MessageTypes.KeybladeChecked, {FormWeaponAbilities[i].Name})
-            end
-        end
-        contained = false
     end
 end
 
@@ -84,11 +64,11 @@ function LocationHandler:CheckChests()
     local CurrentWorld = ReadByte(Now)
     local checks = WorldTables[CurrentWorld]
     if checks then
-        for i = 1, #checks do
-            if ChestsOpenedList[checks[i].Name] then
-                local opened = ReadByte(Save + checks[i].Address)
-                if (opened & (1 << checks[i].BitIndex)) == 0 then
-                    WriteByte(Save + checks[i].Address, opened | (1 << checks[i].BitIndex))
+        for locationID, check in pairs(checks) do
+            if ChestsOpenedList[locationID] then
+                local opened = ReadByte(Save + check.Address)
+                if (opened & (1 << check.BitIndex)) == 0 then
+                    WriteByte(Save + check.Address, opened | (1 << check.BitIndex))
                 end
             end
         end
