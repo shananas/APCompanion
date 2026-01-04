@@ -512,7 +512,7 @@ function ProcessNotification()
 				table.remove(NotificationMessage,1)
 			end
 		elseif NotifType == "info" then
-			if ReadByte(0x0717418) == 1 then
+			if ReadByte(PauseFlag) == 1 then
 				local InfoBarPointerRef = ReadLong(InfoBarPointer)
 				if ReadByte(0x800000) == 0 and InfoBarPointerRef ~= 0 and ReadInt(InfoBarPointerRef + 0x48) == 0 then
 					WriteByte(0x800000, 1)
