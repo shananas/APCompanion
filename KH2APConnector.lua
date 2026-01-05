@@ -171,7 +171,7 @@ function SendToApClient(type,messages)
 		end
 		message = message .. "\n"
 
-		ConsolePrint("Sending message:" .. message)
+		ConsolePrint("Sending message: " .. message)
 		client:send(message)
 	end
 end

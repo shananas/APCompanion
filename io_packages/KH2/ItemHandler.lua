@@ -1,6 +1,7 @@
 local ItemHandler = {}
 
 local VerifyIndex = 14 --Skip ansem reports since they currently dont do anything
+local KnownTornPageFlag = 0
 
 local SoraBack = 0x25D8
 local SoraFront = 0x2546
@@ -217,11 +218,16 @@ function ItemHandler:VerifyInventory()
         end
         local receivedAmount = ItemsReceived[item.Name] or 0
         if item.Name == "Torn Page" then
-            local tornPagesRedeemed = 0
-            for j = 1, #PoohProgress do
-            	if (ReadByte(Save + PoohProgress[j].Address) & (0x1 << PoohProgress[j].BitIndex)) > 0 then
-            		tornPagesRedeemed = tornPagesRedeemed + 1
-            	end
+            local tornPagesRedeemed = KnownTornPageFlag
+            if KnownTornPageFlag < 5 then
+                for j = KnownTornPageFlag + 1, #PoohProgress do
+                	if (ReadByte(Save + PoohProgress[j].Address) & (0x1 << PoohProgress[j].BitIndex)) > 0 then
+                		tornPagesRedeemed = tornPagesRedeemed + 1
+                    else
+                        break
+                	end
+                end
+                KnownTornPageFlag = tornPagesRedeemed
             end
             ItemsReceived[item.Name] = math.max(0, math.min(TornPagesReceived - tornPagesRedeemed, 255))
         end
