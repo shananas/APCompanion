@@ -1,5 +1,4 @@
 --ROM Version
---Last Update: v1.0.0.9 Epic & Steam addresses
 
 LUAGUI_NAME = 'GoA ROM Randomizer Build'
 LUAGUI_AUTH = 'SonicShadowSilver2 (Ported by Num)'

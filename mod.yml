@@ -1,8 +1,17 @@
 title: Archipelago Companion
 originalAuthor: JaredWeakStrike and Shananas
-description: Necessary files for the KH2 Archipelago. Thanks to num for assistance with GoA edits. Thanks to the KH2 Rando Devs for the Quality of life features. TESTING of LuaSocket to remove needing pymem
+description: Necessary files for the KH2 Archipelago. Thanks to num for assistance with GoA edits. Thanks to the KH2 Rando Devs for the Quality of life features. Thanks to Kruho and Lux for initial work on the Lua Socket.
 assets:
 #Lua Script
+- name: scripts/F266B00B GoA ROM.lua
+  method: copy
+  source:
+  - name: F266B00B GoA ROM.lua
+- name: scripts/DriveLogic.lua
+  method: copy
+  source:
+  - name: DriveLogic.lua
+#Socket
 - name: scripts/io_packages/socket.lua
   method: copy
   source:
@@ -71,15 +80,7 @@ assets:
   method: copy
   source:
   - name: KH2APConnector.lua
-#Lua Script
-- name: scripts/F266B00B GoA ROM.lua
-  method: copy
-  source:
-  - name: F266B00B GoA ROM.lua
-- name: scripts/DriveLogic.lua
-  method: copy
-  source:
-  - name: DriveLogic.lua
+#ROM
 - method: binarc
   name: 00battle.bin
   source:
@@ -130,36 +131,25 @@ assets:
   - name: map_skip/libretto-ca.bar
 - method: copy
   multi:
-  - name: limit/us/trinity_zz.bar
+  - name: limit/fm/trinity_zz.bar
   - name: limit/fr/trinity_zz.bar
   - name: limit/gr/trinity_zz.bar
   - name: limit/it/trinity_zz.bar
   - name: limit/sp/trinity_zz.bar
-  name: limit/fm/trinity_zz.bar
+  name: limit/us/trinity_zz.bar
   source:
   - name: 03system.bin/better_stt/trinity_zz.bar
 #Remastered trinity assets internal copy
 - method: copy
   multi:
-  - name: remastered/limit/us/trinity_zz.bar/-1.dds
-  - name: remastered/limit/sp/trinity_zz.bar/-1.dds
-  - name: remastered/limit/it/trinity_zz.bar/-1.dds
-  - name: remastered/limit/gr/trinity_zz.bar/-1.dds
-  - name: remastered/limit/fr/trinity_zz.bar/-1.dds
-  name: remastered/limit/fm/trinity_zz.bar/-1.dds
-  source:
-  - name: remastered/limit/us/trinity_zz.bar/US_trinity_zz_bar1.dds
-    type: internal
-- method: copy
-  multi:
-  - name: remastered/limit/us/trinity_zz.bar/-2.dds
+  - name: remastered/limit/fm/trinity_zz.bar/-2.dds
   - name: remastered/limit/sp/trinity_zz.bar/-2.dds
   - name: remastered/limit/it/trinity_zz.bar/-2.dds
   - name: remastered/limit/gr/trinity_zz.bar/-2.dds
   - name: remastered/limit/fr/trinity_zz.bar/-2.dds
-  name: remastered/limit/fm/trinity_zz.bar/-2.dds
+  name: remastered/limit/us/trinity_zz.bar/-2.dds
   source:
-  - name: remastered/limit/us/trinity_zz.bar/US_trinity_zz_bar2.dds
+  - name: remastered/limit/fm/trinity_zz.bar/US_trinity_zz_bar2.dds
     type: internal
 - method: copy
   name: obj/B_EX100.mset
@@ -245,28 +235,6 @@ assets:
     source:
     - name: msg/eh.yml
       language: en
-#faster custom title screen
-#- name: menu/fm/title.2ld
-#  multi:
-#  - name: menu/fr/title.2ld
-#  - name: menu/gr/title.2ld
-#  - name: menu/it/title.2ld
-#  - name: menu/sp/title.2ld
-#  - name: menu/uk/title.2ld
-#  - name: menu/us/title.2ld
-#  method: copy
-#  source:
-#  - name: title_new.2ld
-#- name: remastered/menu/fr/title.2ld/FR_title_2ld7.png
-  #multi:
-#- name: remastered/menu/gr/title.2ld/GR_title_2ld7.png
-#- name: remastered/menu/it/title.2ld/IT_title_2ld7.png
-#- name: remastered/menu/sp/title.2ld/SP_title_2ld7.png
-# - name: remastered/menu/uk/title.2ld/UK_title_2ld7.png
-# - name: remastered/menu/us/title.2ld/US_title_2ld7.png
-#  method: copy
-#  source:
-#  - name: title_2ld7.png
 # cor orb in pooh
 - name: ard/po00.ard #The Hundred Acre Wood (GoA Warp)
   multi:
