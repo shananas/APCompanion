@@ -1,6 +1,6 @@
 title: Archipelago Companion
 originalAuthor: JaredWeakStrike and Shananas
-description: Necessary files for the KH2 Archipelago. Thanks to num for assistance with GoA edits. Thanks to the KH2 Rando Devs for the Quality of life features. Thanks to Kruho and Lux for initial work on the Lua Socket.
+description: Necessary files for the KH2 Archipelago. Thanks to num for assistance with GoA edits. Thanks to the KH2 Rando Devs for the Quality of life features. Thanks to Krujo and Lux for work on Lua Socket.
 assets:
 #Lua Script
 - name: scripts/F266B00B GoA ROM.lua
