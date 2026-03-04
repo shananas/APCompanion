@@ -664,11 +664,13 @@ function _OnFrame()
 	end
 	IsInShop()
 	if ReadByte(Title) == 1 or ReadByte(MovieFlag) == 1 then
-		Communicate = false
-		CommunicateTimer = 0
+		if Communicate then
+			Communicate = false
+			CommunicateTimer = 0
+		end
 	elseif Communicate == false then
 		CommunicateTimer = CommunicateTimer + 1
-		if CommunicateTimer % HalfSecond == 0 then
+		if CommunicateTimer >= HalfSecond then
 			Communicate = true
 		end
 	end
