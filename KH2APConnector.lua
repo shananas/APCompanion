@@ -16,8 +16,9 @@ LUAGUI_NAME = "KH2 AP Connector [Socket]"
 LUAGUI_AUTH = "Shananas"
 LUAGUI_DESC = "Kingdom Hearts 2 AP Integration using Lua Socket"
 
-local GameStarted = false
 local ConnectionInitialized = false
+local Communicate = false
+local CommunicateTimer = 0
 local FrameCount = 0
 local FramerateSelected = -1
 local Modulo = 15
@@ -301,7 +302,6 @@ end
 
 function CloseConnection()
 	ConnectionInitialized = false
-	GameStarted = false
 	HandshakeSent = false
 	HandshakeReceived = false
 	client:close()
@@ -654,18 +654,25 @@ function _OnFrame()
 	if FrameCount >= FiveSeconds then
 		FrameCount = 0
 	end
-	if not GameStarted and (FrameCount % QuarterSecond) == 0 then
+	if not ConnectionInitialized and (FrameCount % QuarterSecond) == 0 then
 		local connected =  ConnectToApClient()
 
 		if connected then
 			ConnectionInitialized = true
-			GameStarted = true
 		end
 		return
 	end
 	IsInShop()
-	PCInteracted = ReadByte(Save + 0x1D27) & 0x1 << 3 > 0
-	if GameStarted and PCInteracted then
+	if ReadByte(Title) == 1 or ReadByte(MovieFlag) == 1 then
+		Communicate = false
+		CommunicateTimer = 0
+	elseif Communicate == false then
+		CommunicateTimer = CommunicateTimer + 1
+		if CommunicateTimer % HalfSecond == 0 then
+			Communicate = true
+		end
+	end
+	if ConnectionInitialized and Communicate then
 		if not HandshakeSent then
 			SendToApClient(MessageTypes.Handshake, {"Requesting Handshake"})
 			HandshakeSent = true
@@ -749,6 +756,8 @@ if GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 		HasDied = false
 		PauseFlag = 0x0717208
 		Framerate = 0x08CBD0A
+		MovieFlag = 0x2B56028
+		Title = 0x07167A4
 	elseif ReadString(0x9A98B0,4) == 'KH2J' then --Steam Global
 		GameVersion = 3
 		ConsolePrint('KH2APConnector Steam Global Version')
@@ -799,6 +808,8 @@ if GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
 		HasDied = false
 		PauseFlag = 0x0717418
 		Framerate = 0x071536E
+		MovieFlag = 0x2B561E8
+		Title = 0x07169B4
 	elseif ReadString(0x9A7070,4) == "KH2J" or ReadString(0x9A70B0,4) == "KH2J" or ReadString(0x9A92F0,4) == "KH2J" then
 		GameVersion = -1
 		ConsolePrint("Epic Version is outdated. Please update the game.")
