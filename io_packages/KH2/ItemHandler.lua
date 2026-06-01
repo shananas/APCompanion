@@ -225,8 +225,8 @@ function ItemHandler:VerifyInventory()
     for i = 1, ItemsPerFrame do
         local item = Items[VerifyIndex]
         if not item then
-             VerifyIndex = 14 --Skip ansem reports since they currently dont do anything
-             break
+            VerifyIndex = 14 --Skip ansem reports since they currently dont do anything
+            break
         end
         local receivedAmount = ItemsReceived[item.Name] or 0
         if item.Name == "Torn Page" then
