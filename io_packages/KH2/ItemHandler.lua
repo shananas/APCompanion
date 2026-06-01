@@ -1,6 +1,10 @@
 local ItemHandler = {}
 
 local VerifyIndex = 14 --Skip ansem reports since they currently dont do anything
+local VerifyIndexGrowth = 1
+local VerifyIndexSora = 1
+local VerifyIndexDonald = 1
+local VerifyIndexGoofy = 1
 local KnownTornPageFlag = 0
 
 local SoraBack = 0x25D8
@@ -15,6 +19,14 @@ local GrowthSlots = {
     ["Dodge Roll"] = 0x25DE,
     ["Aerial Dodge"] = 0x25E0,
     ["Glide"] = 0x25E2,
+}
+
+local GrowthOrder = {
+    "High Jump",
+    "Quick Run",
+    "Dodge Roll",
+    "Aerial Dodge",
+    "Glide",
 }
 
 local DonaldBack = 0x26F4
@@ -213,8 +225,8 @@ function ItemHandler:VerifyInventory()
     for i = 1, ItemsPerFrame do
         local item = Items[VerifyIndex]
         if not item then
-            VerifyIndex = 14 --Skip ansem reports since they currently dont do anything
-            return
+             VerifyIndex = 14 --Skip ansem reports since they currently dont do anything
+             break
         end
         local receivedAmount = ItemsReceived[item.Name] or 0
         if item.Name == "Torn Page" then
@@ -239,7 +251,55 @@ function ItemHandler:VerifyInventory()
             end
         end
         VerifyIndex = VerifyIndex + 1
+        if VerifyIndex > #Items then
+            VerifyIndex = 14 --Skip ansem reports since they currently dont do anything
+        end
     end
+    --[[local growth = GrowthOrder[VerifyIndexGrowth]
+    if growth then
+        local equipped = ReadShort(Save + GrowthSlots[growth]) & 0x8000
+        WriteShort(Save + GrowthSlots[growth], SoraGrowthReceived[growth].Current | equipped)
+        VerifyIndexGrowth = VerifyIndexGrowth + 1
+        if VerifyIndexGrowth > #GrowthOrder then
+            VerifyIndexGrowth = 1
+        end
+    end
+    for i = 1, ItemsPerFrame do
+        local ability =  SoraAbilitiesReceived[VerifyIndexSora]
+        local slot = SoraBack - (VerifyIndexSora - 1) * 2
+        if ability and not SoraBufferSlots[slot] then
+            local equipped = ReadShort(Save + slot) & 0x8000
+            WriteShort(Save + slot, ability.Address | equipped)
+        end
+        VerifyIndexSora = VerifyIndexSora + 1
+        if VerifyIndexSora > #SoraAbilitiesReceived then
+            VerifyIndexSora = 1
+        end
+    end
+    for i = 1, ItemsPerFrame do
+        local ability =  DonaldAbilitiesReceived[VerifyIndexDonald]
+        local slot = DonaldBack - (VerifyIndexDonald - 1) * 2
+        if ability and not DonaldBufferSlots[slot] then
+            local equipped = ReadShort(Save + slot) & 0x8000
+            WriteShort(Save + slot, ability.Address | equipped)
+        end
+        VerifyIndexDonald = VerifyIndexDonald + 1
+        if VerifyIndexDonald > #DonaldAbilitiesReceived then
+            VerifyIndexDonald = 1
+        end
+    end
+    for i = 1, ItemsPerFrame do
+        local ability =  GoofyAbilitiesReceived[VerifyIndexGoofy]
+        local slot = GoofyBack - (VerifyIndexGoofy - 1) * 2
+        if ability and not GoofyBufferSlots[slot] then
+            local equipped = ReadShort(Save + slot) & 0x8000
+            WriteShort(Save + slot, ability.Address | equipped)
+        end
+        VerifyIndexGoofy = VerifyIndexGoofy + 1
+        if VerifyIndexGoofy > #GoofyAbilitiesReceived then
+            VerifyIndexGoofy = 1
+        end
+    end--]]
 end
 
 return ItemHandler
