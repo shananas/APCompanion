@@ -221,7 +221,7 @@ function ItemHandler:RemoveAbilities()
 end
 
 function ItemHandler:VerifyInventory()
-    local ItemsPerFrame = 3
+    local ItemsPerFrame = 2
     for i = 1, ItemsPerFrame do
         local item = Items[VerifyIndex]
         if not item then
@@ -255,15 +255,7 @@ function ItemHandler:VerifyInventory()
             VerifyIndex = 14 --Skip ansem reports since they currently dont do anything
         end
     end
-    --[[local growth = GrowthOrder[VerifyIndexGrowth]
-    if growth then
-        local equipped = ReadShort(Save + GrowthSlots[growth]) & 0x8000
-        WriteShort(Save + GrowthSlots[growth], SoraGrowthReceived[growth].Current | equipped)
-        VerifyIndexGrowth = VerifyIndexGrowth + 1
-        if VerifyIndexGrowth > #GrowthOrder then
-            VerifyIndexGrowth = 1
-        end
-    end
+    --Sora Abilities ItemsPerFrame
     for i = 1, ItemsPerFrame do
         local ability =  SoraAbilitiesReceived[VerifyIndexSora]
         local slot = SoraBack - (VerifyIndexSora - 1) * 2
@@ -276,30 +268,38 @@ function ItemHandler:VerifyInventory()
             VerifyIndexSora = 1
         end
     end
-    for i = 1, ItemsPerFrame do
-        local ability =  DonaldAbilitiesReceived[VerifyIndexDonald]
-        local slot = DonaldBack - (VerifyIndexDonald - 1) * 2
-        if ability and not DonaldBufferSlots[slot] then
-            local equipped = ReadShort(Save + slot) & 0x8000
-            WriteShort(Save + slot, ability.Address | equipped)
-        end
-        VerifyIndexDonald = VerifyIndexDonald + 1
-        if VerifyIndexDonald > #DonaldAbilitiesReceived then
-            VerifyIndexDonald = 1
+    local growth = GrowthOrder[VerifyIndexGrowth]
+    --Sora growth 1 per frame
+    if growth then
+        local equipped = ReadShort(Save + GrowthSlots[growth]) & 0x8000
+        WriteShort(Save + GrowthSlots[growth], SoraGrowthReceived[growth].Current | equipped)
+        VerifyIndexGrowth = VerifyIndexGrowth + 1
+        if VerifyIndexGrowth > #GrowthOrder then
+            VerifyIndexGrowth = 1
         end
     end
-    for i = 1, ItemsPerFrame do
-        local ability =  GoofyAbilitiesReceived[VerifyIndexGoofy]
-        local slot = GoofyBack - (VerifyIndexGoofy - 1) * 2
-        if ability and not GoofyBufferSlots[slot] then
-            local equipped = ReadShort(Save + slot) & 0x8000
-            WriteShort(Save + slot, ability.Address | equipped)
-        end
-        VerifyIndexGoofy = VerifyIndexGoofy + 1
-        if VerifyIndexGoofy > #GoofyAbilitiesReceived then
-            VerifyIndexGoofy = 1
-        end
-    end--]]
+    --Donald abilities 1 per frame
+    local donaldAbility =  DonaldAbilitiesReceived[VerifyIndexDonald]
+    local slot = DonaldBack - (VerifyIndexDonald - 1) * 2
+    if donaldAbility and not DonaldBufferSlots[slot] then
+        local equipped = ReadShort(Save + slot) & 0x8000
+        WriteShort(Save + slot, donaldAbility.Address | equipped)
+    end
+    VerifyIndexDonald = VerifyIndexDonald + 1
+    if VerifyIndexDonald > #DonaldAbilitiesReceived then
+        VerifyIndexDonald = 1
+    end
+    --Goofy abilities 1 per frame
+    local goofyAbility =  GoofyAbilitiesReceived[VerifyIndexGoofy]
+    local slot = GoofyBack - (VerifyIndexGoofy - 1) * 2
+    if goofyAbility and not GoofyBufferSlots[slot] then
+        local equipped = ReadShort(Save + slot) & 0x8000
+        WriteShort(Save + slot, goofyAbility.Address | equipped)
+    end
+    VerifyIndexGoofy = VerifyIndexGoofy + 1
+    if VerifyIndexGoofy > #GoofyAbilitiesReceived then
+        VerifyIndexGoofy = 1
+    end
 end
 
 return ItemHandler
