@@ -559,10 +559,6 @@ end
 local MessageLimit = 1000
 function APCommunication()
     local MessagesProcessed = 0
-	CurrentWorldLocation()
-	LocationHandler:CheckLevelLocations()
-	LocationHandler:CheckWeaponAbilities()
-	LocationHandler:CheckWorldLocations()
 
     local messages = ReceiveFromApClient()
     for i = 1, #messages do
@@ -693,6 +689,10 @@ function _OnFrame()
 				ItemHandler:VerifyInventory()
 			end
 			if (FrameCount % QuarterSecond) == 0 then
+				CurrentWorldLocation()
+				LocationHandler:CheckLevelLocations()
+				LocationHandler:CheckWeaponAbilities()
+				LocationHandler:CheckWorldLocations()
 				APCommunication()
 				ProcessItemQueue()
 			end
