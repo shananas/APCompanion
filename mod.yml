@@ -221,6 +221,20 @@ assets:
     source:
     - name: msg/sys.yml
       language: en
+- name: msg/us/eh.bar
+  multi:
+  - name: msg/fr/eh.bar
+  - name: msg/gr/eh.bar
+  - name: msg/it/eh.bar
+  - name: msg/sp/eh.bar
+  method: binarc
+  source:
+  - name: eh
+    type: list
+    method: kh2msg
+    source:
+    - name: msg/eh.yml
+      language: en
 - name: msg/us/dc.bar
   multi:
   - name: msg/fr/dc.bar
