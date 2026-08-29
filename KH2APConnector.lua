@@ -680,7 +680,6 @@ function _OnFrame()
 			APCommunication()
 		else
 			RoomSaveTask:GetRoomChange()
-			ItemHandler:RemoveAbilities()
 			if not VictorySent and ((ReadByte(Save + 0x1ED9) & (0x1 << 0)) > 0 or (ReadByte(Save + 0x1ED8) & (0x1 << 1)) > 0) then
 				SendToApClient(MessageTypes.FinalXemnasDefeated, {"Final Xemnas Defeated"})
 				VictorySent = true
@@ -689,6 +688,7 @@ function _OnFrame()
 				ItemHandler:VerifyInventory()
 			end
 			if (FrameCount % QuarterSecond) == 0 then
+				ItemHandler:RemoveAbilities()
 				CurrentWorldLocation()
 				LocationHandler:CheckLevelLocations()
 				LocationHandler:CheckWeaponAbilities()

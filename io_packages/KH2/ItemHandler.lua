@@ -157,10 +157,11 @@ function ItemHandler:GiveAbility(value)
             for i = #SoraAbilitiesReceived, 1, -1 do
                 if SoraAbilitiesReceived[i] == value then
                     slot = SoraBack - (i - 1) * 2
+                    SoraCurrentAbilitySlot = slot
                     break
                 end
             end
-            if slot and not SoraBufferSlots[slot] then
+            if slot and slot ~= SoraFront then
                 local equipped = ReadShort(Save + slot) & 0x8000
                 WriteShort(Save + slot, value.Address | equipped)
             else
@@ -172,10 +173,11 @@ function ItemHandler:GiveAbility(value)
         for i = #DonaldAbilitiesReceived, 1, -1 do
             if DonaldAbilitiesReceived[i] == value then
                 slot = DonaldBack - (i - 1) * 2
+                DonaldCurrentAbilitySlot = slot
                 break
             end
         end
-        if slot and not DonaldBufferSlots[slot] then
+        if slot and  slot ~= DonaldFront then
             local equipped = ReadShort(Save + slot) & 0x8000
             WriteShort(Save + slot, value.Address | equipped)
         else
@@ -186,10 +188,11 @@ function ItemHandler:GiveAbility(value)
         for i = #GoofyAbilitiesReceived, 1, -1 do
             if GoofyAbilitiesReceived[i] == value then
                 slot = GoofyBack - (i - 1) * 2
+                GoofyCurrentAbilitySlot = slot
                 break
             end
         end
-        if slot and not GoofyBufferSlots[slot] then
+        if slot and slot ~= GoofyFront then
              local equipped = ReadShort(Save + slot) & 0x8000
              WriteShort(Save + slot, value.Address | equipped)
         else
@@ -203,21 +206,33 @@ function ItemHandler:Request()
 end
 
 function ItemHandler:RemoveAbilities()
-   for slot, _ in pairs(SoraBufferSlots) do
-       if ReadShort(Save + slot) ~= 0 then
-           WriteShort(Save + slot, 0)
-       end
-   end
-   for slot, _ in pairs(DonaldBufferSlots) do
-       if ReadShort(Save + slot) ~= 0 then
-           WriteShort(Save + slot, 0)
-       end
-   end
-   for slot, _ in pairs(GoofyBufferSlots) do
-       if ReadShort(Save + slot) ~= 0 then
-           WriteShort(Save + slot, 0)
-       end
-   end
+    for slot, _ in pairs(SoraBufferSlots) do
+        if SoraCurrentAbilitySlot > slot then
+            if ReadShort(Save + slot) ~= 0 then
+                WriteShort(Save + slot, 0)
+            end
+         else
+            break
+        end
+    end
+    for slot, _ in pairs(DonaldBufferSlots) do
+        if DonaldCurrentAbilitySlot > slot then
+            if ReadShort(Save + slot) ~= 0 then
+                WriteShort(Save + slot, 0)
+            end
+         else
+            break
+        end
+    end
+    for slot, _ in pairs(GoofyBufferSlots) do
+        if GoofyCurrentAbilitySlot > slot then
+            if ReadShort(Save + slot) ~= 0 then
+                WriteShort(Save + slot, 0)
+            end
+         else
+            break
+        end
+    end
 end
 
 function ItemHandler:VerifyInventory()
@@ -260,7 +275,7 @@ function ItemHandler:VerifyInventory()
         for i = 1, ItemsPerFrame do
             local ability =  SoraAbilitiesReceived[VerifyIndexSora]
             local slot = SoraBack - (VerifyIndexSora - 1) * 2
-            if ability and not SoraBufferSlots[slot] then
+            if ability and slot ~= SoraFront then
                 local equipped = ReadShort(Save + slot) & 0x8000
                 WriteShort(Save + slot, ability.Address | equipped)
             end
@@ -292,7 +307,7 @@ function ItemHandler:VerifyInventory()
         --Donald abilities 1 per frame
         local donaldAbility =  DonaldAbilitiesReceived[VerifyIndexDonald]
         local slot = DonaldBack - (VerifyIndexDonald - 1) * 2
-        if donaldAbility and not DonaldBufferSlots[slot] then
+        if donaldAbility and slot ~= DonaldFront then
             local equipped = ReadShort(Save + slot) & 0x8000
             WriteShort(Save + slot, donaldAbility.Address | equipped)
         end
@@ -305,7 +320,7 @@ function ItemHandler:VerifyInventory()
         --Goofy abilities 1 per frame
         local goofyAbility =  GoofyAbilitiesReceived[VerifyIndexGoofy]
         local slot = GoofyBack - (VerifyIndexGoofy - 1) * 2
-        if goofyAbility and not GoofyBufferSlots[slot] then
+        if goofyAbility and slot ~= DonaldFront then
             local equipped = ReadShort(Save + slot) & 0x8000
             WriteShort(Save + slot, goofyAbility.Address | equipped)
         end
