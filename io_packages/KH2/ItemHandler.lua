@@ -2,15 +2,53 @@ local ItemHandler = {}
 
 local VerifyIndex = 14 --Skip ansem reports since they currently dont do anything
 local VerifyIndexGrowth = 1
-local VerifyIndexSora = 1
-local VerifyIndexDonald = 1
-local VerifyIndexGoofy = 1
 local KnownTornPageFlag = 0
 
-local SoraBack = 0x25D8
-local SoraFront = 0x2546
-local SoraCurrentAbilitySlot = 0x25D8
-local SoraBufferSlots = { [0x2546] = true, [0x2548] = true, [0x254A] = true, [0x254C] = true }
+local AbilityData = {
+
+    Sora = {
+        FrontSlot = 0x2546,
+        BackSlot = 0x25D8,
+        CurrentSlot = 0x25D8,
+        BufferSlots = {
+            0x2546,
+            0x2548,
+            0x254A,
+            0x254C,
+        },
+        AbilitiesReceived = SoraAbilitiesReceived,
+        VerifyIndex = 1,
+    },
+
+    Donald = {
+        FrontSlot = 0x2658,
+        BackSlot = 0x26F4,
+        CurrentSlot = 0x26F4,
+        BufferSlots = {
+            0x2658,
+            0x265A,
+            0x265C,
+            0x265E,
+        },
+        AbilitiesReceived = DonaldAbilitiesReceived,
+        VerifyIndex = 1,
+    },
+
+    Goofy = {
+        FrontSlot = 0x276C,
+        BackSlot = 0x2808,
+        CurrentSlot = 0x2808,
+        BufferSlots = {
+            0x276C,
+            0x276E,
+            0x2770,
+            0x2772,
+        },
+        AbilitiesReceived = GoofyAbilitiesReceived,
+        VerifyIndex = 1,
+    },
+}
+
 local SoraEquippedKeybladeSlots = { 0x24F0, 0x32F4, 0x339C, 0x33D4, }
 
 local GrowthSlots = {
@@ -28,16 +66,6 @@ local GrowthOrder = {
     "Aerial Dodge",
     "Glide",
 }
-
-local DonaldBack = 0x26F4
-local DonaldFront = 0x2658
-local DonaldCurrentAbilitySlot = 0x26F4
-local DonaldBufferSlots = { [0x2658] = true, [0x265A] = true, [0x265C] = true, [0x265E] = true }
-
-local GoofyBack = 0x2808
-local GoofyFront = 0x276C
-local GoofyCurrentAbilitySlot = 0x2808
-local GoofyBufferSlots = { [0x276C] = true, [0x276E] = true,  [0x2770] = true, [0x2772] = true }
 
 local CharacterAnchors = {
      0x24F0,    --Sora
@@ -91,30 +119,12 @@ function ItemHandler:GiveItem(value, verify)
             end
             amount = math.max(0, amount - (SoldItems[value.Name] or 0))
             WriteByte(Save + value.Address, amount)
-        elseif value.Type == "Accessories" then
+        elseif value.Type == "Accessories" or value.Type == "Armor" then
             local amount = ItemsReceived[value.Name]
             for Character = 1, #CharacterAnchors do
                 local Base = Save + CharacterAnchors[Character]
-                for Slot = 1, #EquipmentAnchor.Accessories do
-                    if ReadShort(Base + EquipmentAnchor.Accessories[Slot]) == value.ID then
-                        amount = amount - 1
-                        if amount <= 0 then
-                            break
-                        end
-                    end
-                end
-                if amount <= 0 then
-                    break
-                end
-            end
-            amount = math.max(0, amount - (SoldItems[value.Name] or 0))
-            WriteByte(Save + value.Address, amount)
-        elseif value.Type == "Armor" then
-            local amount = ItemsReceived[value.Name]
-            for Character = 1, #CharacterAnchors do
-                local Base = Save + CharacterAnchors[Character]
-                for Slot = 1, #EquipmentAnchor.Armor do
-                    if ReadShort(Base + EquipmentAnchor.Armor[Slot]) == value.ID then
+                for Slot = 1, #EquipmentAnchor[value.Type] do
+                    if ReadShort(Base + EquipmentAnchor[value.Type][Slot]) == value.ID then
                         amount = amount - 1
                         if amount <= 0 then
                             break
@@ -148,53 +158,22 @@ function ItemHandler:GiveItem(value, verify)
 end
 
 function ItemHandler:GiveAbility(value)
-    if value.Ability == "Sora" then
-        if GrowthSlots[value.Name] then
-            local equipped = ReadShort(Save + GrowthSlots[value.Name]) & 0x8000
-            WriteShort(Save + GrowthSlots[value.Name], SoraGrowthReceived[value.Name].Current | equipped)
-        else
-            local slot
-            for i = #SoraAbilitiesReceived, 1, -1 do
-                if SoraAbilitiesReceived[i] == value then
-                    slot = SoraBack - (i - 1) * 2
-                    SoraCurrentAbilitySlot = slot
-                    break
-                end
-            end
-            if slot and slot ~= SoraFront then
-                local equipped = ReadShort(Save + slot) & 0x8000
-                WriteShort(Save + slot, value.Address | equipped)
-            else
-                ConsolePrint("Error too many abilities cannot receive anymore. Ability skipped "  .. value.Name)
-            end
-        end
-    elseif value.Ability == "Donald" then
+    if GrowthSlots[value.Name] then
+        local equipped = ReadShort(Save + GrowthSlots[value.Name]) & 0x8000
+        WriteShort(Save + GrowthSlots[value.Name], SoraGrowthReceived[value.Name].Current | equipped)
+    else
+        local character = AbilityData[value.Ability]
         local slot
-        for i = #DonaldAbilitiesReceived, 1, -1 do
-            if DonaldAbilitiesReceived[i] == value then
-                slot = DonaldBack - (i - 1) * 2
-                DonaldCurrentAbilitySlot = slot
+        for i = #character.AbilitiesReceived, 1, -1 do
+            if character.AbilitiesReceived[i] == value then
+                slot = character.BackSlot - (i - 1) * 2
+                character.CurrentSlot = slot
                 break
             end
         end
-        if slot and  slot ~= DonaldFront then
+        if slot and slot ~= character.FrontSlot then
             local equipped = ReadShort(Save + slot) & 0x8000
             WriteShort(Save + slot, value.Address | equipped)
-        else
-            ConsolePrint("Error too many abilities cannot receive anymore. Ability skipped "  .. value.Name)
-        end
-    elseif value.Ability == "Goofy" then
-        local slot
-        for i = #GoofyAbilitiesReceived, 1, -1 do
-            if GoofyAbilitiesReceived[i] == value then
-                slot = GoofyBack - (i - 1) * 2
-                GoofyCurrentAbilitySlot = slot
-                break
-            end
-        end
-        if slot and slot ~= GoofyFront then
-             local equipped = ReadShort(Save + slot) & 0x8000
-             WriteShort(Save + slot, value.Address | equipped)
         else
             ConsolePrint("Error too many abilities cannot receive anymore. Ability skipped "  .. value.Name)
         end
@@ -206,31 +185,16 @@ function ItemHandler:Request()
 end
 
 function ItemHandler:RemoveAbilities()
-    for slot, _ in pairs(SoraBufferSlots) do
-        if SoraCurrentAbilitySlot > slot then
-            if ReadShort(Save + slot) ~= 0 then
-                WriteShort(Save + slot, 0)
+    for _, character in pairs(AbilityData) do
+        for i = 1, #character.BufferSlots do
+            local slot = character.BufferSlots[i]
+            if character.CurrentSlot > slot then
+                if ReadShort(Save + slot) ~= 0 then
+                    WriteShort(Save + slot, 0)
+                end
+            else
+                break
             end
-         else
-            break
-        end
-    end
-    for slot, _ in pairs(DonaldBufferSlots) do
-        if DonaldCurrentAbilitySlot > slot then
-            if ReadShort(Save + slot) ~= 0 then
-                WriteShort(Save + slot, 0)
-            end
-         else
-            break
-        end
-    end
-    for slot, _ in pairs(GoofyBufferSlots) do
-        if GoofyCurrentAbilitySlot > slot then
-            if ReadShort(Save + slot) ~= 0 then
-                WriteShort(Save + slot, 0)
-            end
-         else
-            break
         end
     end
 end
@@ -270,21 +234,6 @@ function ItemHandler:VerifyInventory()
             VerifyIndex = 14 --Skip ansem reports since they currently dont do anything
         end
     end
-    if #SoraAbilitiesReceived > 0 then
-        --Sora Abilities ItemsPerFrame
-        for i = 1, ItemsPerFrame do
-            local ability =  SoraAbilitiesReceived[VerifyIndexSora]
-            local slot = SoraBack - (VerifyIndexSora - 1) * 2
-            if ability and slot ~= SoraFront then
-                local equipped = ReadShort(Save + slot) & 0x8000
-                WriteShort(Save + slot, ability.Address | equipped)
-            end
-            VerifyIndexSora = VerifyIndexSora + 1
-            if VerifyIndexSora > #SoraAbilitiesReceived then
-                VerifyIndexSora = 1
-            end
-        end
-    end
     local growth = GrowthOrder[VerifyIndexGrowth]
     local isReceived = SoraGrowthReceived[growth]
     if isReceived.Max - isReceived.Current < 4 then
@@ -303,30 +252,20 @@ function ItemHandler:VerifyInventory()
             VerifyIndexGrowth = 1
         end
     end
-    if #DonaldAbilitiesReceived > 0 then
-        --Donald abilities 1 per frame
-        local donaldAbility =  DonaldAbilitiesReceived[VerifyIndexDonald]
-        local slot = DonaldBack - (VerifyIndexDonald - 1) * 2
-        if donaldAbility and slot ~= DonaldFront then
-            local equipped = ReadShort(Save + slot) & 0x8000
-            WriteShort(Save + slot, donaldAbility.Address | equipped)
-        end
-        VerifyIndexDonald = VerifyIndexDonald + 1
-        if VerifyIndexDonald > #DonaldAbilitiesReceived then
-            VerifyIndexDonald = 1
-        end
-    end
-    if #GoofyAbilitiesReceived > 0 then
-        --Goofy abilities 1 per frame
-        local goofyAbility =  GoofyAbilitiesReceived[VerifyIndexGoofy]
-        local slot = GoofyBack - (VerifyIndexGoofy - 1) * 2
-        if goofyAbility and slot ~= DonaldFront then
-            local equipped = ReadShort(Save + slot) & 0x8000
-            WriteShort(Save + slot, goofyAbility.Address | equipped)
-        end
-        VerifyIndexGoofy = VerifyIndexGoofy + 1
-        if VerifyIndexGoofy > #GoofyAbilitiesReceived then
-            VerifyIndexGoofy = 1
+    for _, character in pairs(AbilityData) do
+        if #character.AbilitiesReceived > 0 then
+            for i = 1, ItemsPerFrame do
+                local ability = character.AbilitiesReceived[character.VerifyIndex]
+                local slot = character.BackSlot - (character.VerifyIndex - 1) * 2
+                if ability and slot ~= character.FrontSlot then
+                    local equipped = ReadShort(Save + slot) & 0x8000
+                    WriteShort(Save + slot, ability.Address | equipped)
+                end
+                character.VerifyIndex = character.VerifyIndex + 1
+                if character.VerifyIndex > #character.AbilitiesReceived then
+                    character.VerifyIndex = 1
+                end
+            end
         end
     end
 end
