@@ -86,10 +86,6 @@ local EquipmentAnchor = {
     Accessories = { 0x24, 0x26, 0x28, 0x2A, 0x2C, 0x2E, 0x30, 0x32 },
 }
 
-function ItemHandler:Reset()
-  ConsolePrint("Item Handler Reset")
-end
-
 function ItemHandler:Receive(item)
     ConsolePrint("Received " .. item.Name)
     if item.Type ~= "Ability" then
@@ -162,16 +158,16 @@ function ItemHandler:GiveAbility(value)
         local equipped = ReadShort(Save + GrowthSlots[value.Name]) & 0x8000
         WriteShort(Save + GrowthSlots[value.Name], SoraGrowthReceived[value.Name].Current | equipped)
     else
-        local character = AbilityData[value.Ability]
+        local characterIndex = AbilityData[value.Ability]
         local slot
-        for i = #character.AbilitiesReceived, 1, -1 do
-            if character.AbilitiesReceived[i] == value then
-                slot = character.BackSlot - (i - 1) * 2
-                character.CurrentSlot = slot
+        for i = #characterIndex.AbilitiesReceived, 1, -1 do
+            if characterIndex.AbilitiesReceived[i] == value then
+                slot = characterIndex.BackSlot - (i - 1) * 2
+                characterIndex.CurrentSlot = slot
                 break
             end
         end
-        if slot and slot ~= character.FrontSlot then
+        if slot and slot ~= characterIndex.FrontSlot then
             local equipped = ReadShort(Save + slot) & 0x8000
             WriteShort(Save + slot, value.Address | equipped)
         else
@@ -185,10 +181,10 @@ function ItemHandler:Request()
 end
 
 function ItemHandler:RemoveAbilities()
-    for _, character in pairs(AbilityData) do
-        for i = 1, #character.BufferSlots do
-            local slot = character.BufferSlots[i]
-            if character.CurrentSlot > slot then
+    for _, characterIndex in pairs(AbilityData) do
+        for i = 1, #characterIndex.BufferSlots do
+            local slot = characterIndex.BufferSlots[i]
+            if characterIndex.CurrentSlot > slot then
                 if ReadShort(Save + slot) ~= 0 then
                     WriteShort(Save + slot, 0)
                 end
@@ -252,18 +248,18 @@ function ItemHandler:VerifyInventory()
             VerifyIndexGrowth = 1
         end
     end
-    for _, character in pairs(AbilityData) do
-        if #character.AbilitiesReceived > 0 then
+    for _, characterIndex in pairs(AbilityData) do
+        if #characterIndex.AbilitiesReceived > 0 then
             for i = 1, ItemsPerFrame do
-                local ability = character.AbilitiesReceived[character.VerifyIndex]
-                local slot = character.BackSlot - (character.VerifyIndex - 1) * 2
-                if ability and slot ~= character.FrontSlot then
+                local ability = characterIndex.AbilitiesReceived[characterIndex.VerifyIndex]
+                local slot = characterIndex.BackSlot - (characterIndex.VerifyIndex - 1) * 2
+                if ability and slot ~= characterIndex.FrontSlot then
                     local equipped = ReadShort(Save + slot) & 0x8000
                     WriteShort(Save + slot, ability.Address | equipped)
                 end
-                character.VerifyIndex = character.VerifyIndex + 1
-                if character.VerifyIndex > #character.AbilitiesReceived then
-                    character.VerifyIndex = 1
+                characterIndex.VerifyIndex = characterIndex.VerifyIndex + 1
+                if characterIndex.VerifyIndex > #characterIndex.AbilitiesReceived then
+                    characterIndex.VerifyIndex = 1
                 end
             end
         end

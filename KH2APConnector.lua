@@ -26,7 +26,7 @@ local QuarterSecond = 0
 local HalfSecond = 0
 local OneSecond = 0
 local FiveSeconds = 0
-ChestWait = false
+local ChestWait = false
 
 local client
 
@@ -72,8 +72,8 @@ MessageTypes = {
     Handshake = 19,
     Closed = 20,
 }
-HandshakeSent = false
-HandshakeReceived = false
+local HandshakeSent = false
+local HandshakeReceived = false
 
 --Items
 Items = {}
@@ -117,15 +117,6 @@ MaxMasterLevel = { Value = 1 }
 MaxFinalLevel = { Value = 1 }
 MaxSummonLevel = { Value = 1 }
 
-ProofsGiven = false
-FormSummonLevels = {
-	0x32F6,
-	0x332E,
-	0x3366,
-	0x339E,
-	0x33D6,
-	0x3526,
-}
 DeathlinkEnabled = false
 ReceivedDeath = false
 VictorySent = false
@@ -164,9 +155,9 @@ function ConnectToApClient()
     end
 end
 
-function SendToApClient(type,messages)
+function SendToApClient(msgType,messages)
 	if client then
-		local message = tostring(type)
+		local message = tostring(msgType)
 		for i = 1, #messages do
 			message = message .. ";" .. tostring(messages[i])
 		end
@@ -178,12 +169,12 @@ function SendToApClient(type,messages)
 end
 
 function HandleMessage(msg)
-	if msg.type == nil then
+	if msg.msgType == nil then
 		ConsolePrint("No message type defined; cannot handle")
 		return
 	end
 
-	if msg.type == MessageTypes.GiveItem then
+	if msg.msgType == MessageTypes.GiveItem then
 		ConsolePrint("Receiving single item")
 		local _item
 		if tonumber(msg.values[3]) > LastReceivedIndex then
@@ -198,7 +189,7 @@ function HandleMessage(msg)
 			ConsolePrint("Already received item: " .. table.concat(msg.values, ","))
 		end
 
-	elseif msg.type == MessageTypes.Deathlink then
+	elseif msg.msgType == MessageTypes.Deathlink then
 		if msg.values[1] ~= nil then
 			DeathlinkEnabled = ("True" == msg.values[1])
 			ConsolePrint(tostring(DeathlinkEnabled))
@@ -206,14 +197,14 @@ function HandleMessage(msg)
 			ReceivedDeath = true
 		end
 
-	elseif msg.type == MessageTypes.SoldItems then
+	elseif msg.msgType == MessageTypes.SoldItems then
 		SoldItems[msg.values[1]] = tonumber(msg.values[2])
 
 
-	elseif msg.type == MessageTypes.ChestsOpened then
+	elseif msg.msgType == MessageTypes.ChestsOpened then
 		ChestsOpenedList[tonumber(msg.values[1])] = true
 
-	elseif msg.type == MessageTypes.Handshake then
+	elseif msg.msgType == MessageTypes.Handshake then
 		HandshakeReceived = true
 		SendToApClient(MessageTypes.CurrentWorldInt, {World})
 		if msg.values[1] == "True" then
@@ -221,17 +212,17 @@ function HandleMessage(msg)
 			SendToApClient(MessageTypes.RequestAllItems, {"Requesting Items"})
 		end
 
-	elseif msg.type == MessageTypes.NotificationType then
+	elseif msg.msgType == MessageTypes.NotificationType then
 		if msg.values[1] == "R" then
 			ReceiveNotificationType = msg.values[2]
 		elseif msg.values[1] == "S" then
 			SendNotificationType = msg.values[2]
 		end
 
-	elseif msg.type == MessageTypes.NotificationMessage then
+	elseif msg.msgType == MessageTypes.NotificationMessage then
 		table.insert(NotificationMessage, { msg.values[1], msg.values[2] })
 
-	elseif msg.type == MessageTypes.SendProofs then
+	elseif msg.msgType == MessageTypes.SendProofs then
 		ItemsReceived["Proof of Connection"] = 1
 		ItemsReceived["Proof of Nonexistence"] = 1
 		ItemsReceived["Proof of Peace"] = 1
@@ -270,9 +261,9 @@ function ReceiveFromApClient()
 			if not isWait then
 				ConsolePrint("Full message received: " .. message)
 				local parts = SplitString(message, ";")
-				local type = tonumber(parts[1])
+				local msgType= tonumber(parts[1])
 				local newMessage = {
-				    type = GetMessageType(type),
+				    msgType = GetMessageType(msgType),
 				    values = {}
 				}
 
@@ -280,7 +271,7 @@ function ReceiveFromApClient()
 				    table.insert(newMessage.values, parts[i])
 				end
 
-				if newMessage.type == MessageTypes.Closed then
+				if newMessage.msgType == MessageTypes.Closed then
 				    ConsolePrint("Server closed resetting client")
 				    CloseConnection()
 				    return {}
@@ -608,17 +599,17 @@ function _OnFrame()
 		GetVersion()
 		return
 	end
-	if true then
-		World  = ReadByte(Now+0x00)
-		Room   = ReadByte(Now+0x01)
-		Place  = ReadShort(Now+0x00)
-		Door   = ReadShort(Now+0x02)
-		Map    = ReadShort(Now+0x04)
-		Btl    = ReadShort(Now+0x06)
-		Evt    = ReadShort(Now+0x08)
-		PrevPlace = ReadShort(Now+0x30)
-		ARD = ReadLong(ARDPointer)
-	end
+
+	World  = ReadByte(Now+0x00)
+	Room   = ReadByte(Now+0x01)
+	Place  = ReadShort(Now+0x00)
+	Door   = ReadShort(Now+0x02)
+	Map    = ReadShort(Now+0x04)
+	Btl    = ReadShort(Now+0x06)
+	Evt    = ReadShort(Now+0x08)
+	PrevPlace = ReadShort(Now+0x30)
+	ARD = ReadLong(ARDPointer)
+
 	if FramerateSelected ~= ReadByte(Framerate) then
 		FramerateSelected = ReadByte(Framerate)
 		if FramerateSelected == 0 then

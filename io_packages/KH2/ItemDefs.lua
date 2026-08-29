@@ -211,7 +211,6 @@ function ItemDefs:DefineItems()
         {ID = 367, Name = "Lucky Emblem",             Type = "Wincon", Address = 0x3641}, --letter item
         {ID = 461, Name = "Bounty",                   Type = "Wincon", Address = 0x365E}, --Dummy 14
     }
-  return Items
 end
 
 function ItemDefs:DefineAbilities()
@@ -338,7 +337,6 @@ function ItemDefs:DefineAbilities()
         {ID = 597, Name = "Goofy Protectra",       Ability = "Goofy", Type = "Ability", Address = 0x255},
         {ID = 598, Name = "Goofy Protectga",       Ability = "Goofy", Type = "Ability", Address = 0x256},
     }
-    return Abilities
 end
 
 function ItemDefs:SellableItems()
