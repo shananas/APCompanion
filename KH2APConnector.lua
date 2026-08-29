@@ -5,13 +5,6 @@
 ------ Special Thanks to Sonicshadowsilver2, Meebo, & Krujo
 ---------------------------------------------------
 
-local socket = require("socket")
-local ItemHandler = require("KH2.ItemHandler")
-local ItemDefs = require("KH2.ItemDefs")
-local LocationDefs = require("KH2.LocationDefs")
-local LocationHandler = require("KH2.LocationHandler")
-local RoomSaveTask = require("KH2.RoomSaveTask")
-
 LUAGUI_NAME = "KH2 AP Connector [Socket]"
 LUAGUI_AUTH = "Shananas"
 LUAGUI_DESC = "Kingdom Hearts 2 AP Integration using Lua Socket"
@@ -133,6 +126,13 @@ local ShopState = {
 	SellableSnapshot = {},
 }
 WorldTables = {}
+
+local socket = require("socket")
+local ItemHandler = require("KH2.ItemHandler")
+local ItemDefs = require("KH2.ItemDefs")
+local LocationDefs = require("KH2.LocationDefs")
+local LocationHandler = require("KH2.LocationHandler")
+local RoomSaveTask = require("KH2.RoomSaveTask")
 
 -- ############################################################
 -- ######################  Socket  ############################
