@@ -679,7 +679,6 @@ function _OnFrame()
 				ItemHandler:VerifyInventory()
 			end
 			if (FrameCount % QuarterSecond) == 0 then
-				ItemHandler:RemoveAbilities()
 				CurrentWorldLocation()
 				LocationHandler:CheckLevelLocations()
 				LocationHandler:CheckWeaponAbilities()

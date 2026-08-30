@@ -174,6 +174,7 @@ function ItemHandler:GiveAbility(value)
             ConsolePrint("Error too many abilities cannot receive anymore. Ability skipped "  .. value.Name)
         end
     end
+    ItemHandler:RemoveAbilities()
 end
 
 function ItemHandler:Request()
