@@ -167,7 +167,7 @@ function ItemHandler:GiveAbility(value)
                 break
             end
         end
-        if slot and slot ~= characterIndex.FrontSlot then
+        if slot and slot > characterIndex.FrontSlot then
             local equipped = ReadShort(Save + slot) & 0x8000
             WriteShort(Save + slot, value.Address | equipped)
         else
@@ -253,7 +253,7 @@ function ItemHandler:VerifyInventory()
             for i = 1, ItemsPerFrame do
                 local ability = characterIndex.AbilitiesReceived[characterIndex.VerifyIndex]
                 local slot = characterIndex.BackSlot - (characterIndex.VerifyIndex - 1) * 2
-                if ability and slot ~= characterIndex.FrontSlot then
+                if ability and slot > characterIndex.FrontSlot then
                     local equipped = ReadShort(Save + slot) & 0x8000
                     WriteShort(Save + slot, ability.Address | equipped)
                 end
