@@ -9,6 +9,16 @@ LUAGUI_NAME = "KH2 AP Connector [Socket]"
 LUAGUI_AUTH = "Shananas"
 LUAGUI_DESC = "Kingdom Hearts 2 AP Integration using Lua Socket"
 
+SoraAbilitiesReceived = {}
+DonaldAbilitiesReceived = {}
+GoofyAbilitiesReceived = {}
+local socket = require("socket")
+local ItemHandler = require("KH2.ItemHandler")
+local ItemDefs = require("KH2.ItemDefs")
+local LocationDefs = require("KH2.LocationDefs")
+local LocationHandler = require("KH2.LocationHandler")
+local RoomSaveTask = require("KH2.RoomSaveTask")
+
 local ConnectionInitialized = false
 local Communicate = false
 local CommunicateTimer = 0
@@ -85,7 +95,6 @@ LimitForm = {}
 MasterForm = {}
 FinalForm = {}
 SummonLevels = {}
-SoraAbilitiesReceived = {}
 --current is (level 1 growth - 1) since anytime you receive it it increments it by 1 including the first growth
 SoraGrowthReceived = {
 	["High Jump"] = {Current = 0x05D, Max = 0x061},
@@ -94,8 +103,6 @@ SoraGrowthReceived = {
 	["Aerial Dodge"] = {Current = 0x065, Max = 0x069},
 	["Glide"] = {Current = 0x069, Max = 0x06D},
 }
-DonaldAbilitiesReceived = {}
-GoofyAbilitiesReceived = {}
 WeaponAbilities = {}
 FormWeaponAbilities = {}
 
@@ -126,13 +133,6 @@ local ShopState = {
 	SellableSnapshot = {},
 }
 WorldTables = {}
-
-local socket = require("socket")
-local ItemHandler = require("KH2.ItemHandler")
-local ItemDefs = require("KH2.ItemDefs")
-local LocationDefs = require("KH2.LocationDefs")
-local LocationHandler = require("KH2.LocationHandler")
-local RoomSaveTask = require("KH2.RoomSaveTask")
 
 -- ############################################################
 -- ######################  Socket  ############################
