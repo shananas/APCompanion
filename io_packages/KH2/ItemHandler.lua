@@ -1,7 +1,8 @@
 local ItemHandler = {}
 
 local VerifyIndex = 14 --Skip ansem reports since they currently dont do anything
-local VerifyIndexGrowth = 1
+local InventoryStart = 0x3594
+local InventoryEnd = 0x36CA
 local KnownTornPageFlag = 0
 
 local AbilityData = {
@@ -17,7 +18,6 @@ local AbilityData = {
             0x254C,
         },
         AbilitiesReceived = SoraAbilitiesReceived,
-        VerifyIndex = 1,
     },
 
     Donald = {
@@ -31,7 +31,6 @@ local AbilityData = {
             0x265E,
         },
         AbilitiesReceived = DonaldAbilitiesReceived,
-        VerifyIndex = 1,
     },
 
     Goofy = {
@@ -45,7 +44,6 @@ local AbilityData = {
             0x2772,
         },
         AbilitiesReceived = GoofyAbilitiesReceived,
-        VerifyIndex = 1,
     },
 }
 
@@ -89,16 +87,16 @@ local EquipmentAnchor = {
 function ItemHandler:Receive(item)
     ConsolePrint("Received " .. item.Name)
     if item.Type ~= "Ability" then
-        self:GiveItem(item, false)
+        self:GiveItem(item)
     else
         self:GiveAbility(item)
     end
 
 end
 
-function ItemHandler:GiveItem(value, verify)
+function ItemHandler:GiveItem(value)
     if value.Bitmask ~= nil then
-        if value.Type == "Form" and not verify then
+        if value.Type == "Form" then
             WriteByte(Save + 0x3410, 0)
         end
         WriteByte(Save + value.Address, ReadByte(Save + value.Address) | (0x01 << value.Bitmask))
@@ -196,75 +194,76 @@ function ItemHandler:RemoveAbilities()
     end
 end
 
-function ItemHandler:VerifyInventory()
-    local ItemsPerFrame = 2
-    for i = 1, ItemsPerFrame do
-        local item = Items[VerifyIndex]
-        if not item then
-            VerifyIndex = 14 --Skip ansem reports since they currently dont do anything
+function VerifyAbilityCharacter(characterIndex)
+    local buffer = ReadArray(Save + characterIndex.FrontSlot, (characterIndex.BackSlot - characterIndex.FrontSlot + 2))
+    for i, ability in ipairs(characterIndex.AbilitiesReceived) do
+        local slot = characterIndex.BackSlot - (i - 1) * 2
+        if slot <= characterIndex.FrontSlot then
             break
         end
-        local receivedAmount = ItemsReceived[item.Name] or 0
-        if item.Name == "Torn Page" then
-            local tornPagesRedeemed = KnownTornPageFlag
-            if KnownTornPageFlag < 5 then
-                for j = KnownTornPageFlag + 1, #PoohProgress do
-                	if (ReadByte(Save + PoohProgress[j].Address) & (0x1 << PoohProgress[j].BitIndex)) > 0 then
-                		tornPagesRedeemed = tornPagesRedeemed + 1
-                    else
-                        break
-                	end
+        local offset = slot - characterIndex.FrontSlot
+        --First Byte is always ability ID, Lower half of second byte is also sometimes ability ID otherwise 0, and upper half of second byte is equipped status.
+        buffer[offset + 1] = ability.Address & 0xFF
+        buffer[offset + 2] = (buffer[offset + 2] & 0x80) | ((ability.Address >> 8) & 0x7F)
+    end
+    WriteArray(Save + characterIndex.FrontSlot, buffer)
+end
+
+function VerifyGrowth()
+    local buffer = ReadArray(Save + 0x25DA, 10)
+    for i, growth in ipairs(GrowthOrder) do
+        local received = SoraGrowthReceived[growth]
+        if received.Max - received.Current < 4 then
+            local offset = (i - 1) * 2
+            --Explanation Above
+            buffer[offset + 1] = received.Current & 0xFF
+            buffer[offset + 2] = (buffer[offset + 2] & 0x80) | ((received.Current >> 8) & 0x7F)
+        end
+    end
+    WriteArray(Save + 0x25DA, buffer)
+end
+
+function ItemHandler:VerifyInventory()
+    local ItemsPerFrame = 2
+        for i = 1, ItemsPerFrame do
+            local item = Items[VerifyIndex]
+            if not item then
+                VerifyIndex = 14 --Skip ansem reports since they currently dont do anything
+                break
+            end
+            local receivedAmount = ItemsReceived[item.Name] or 0
+            if item.Name == "Torn Page" then
+                local tornPagesRedeemed = KnownTornPageFlag
+                if KnownTornPageFlag < 5 then
+                    for j = KnownTornPageFlag + 1, #PoohProgress do
+                    	if (ReadByte(Save + PoohProgress[j].Address) & (0x1 << PoohProgress[j].BitIndex)) > 0 then
+                    		tornPagesRedeemed = tornPagesRedeemed + 1
+                        else
+                            break
+                    	end
+                    end
+                    KnownTornPageFlag = tornPagesRedeemed
                 end
-                KnownTornPageFlag = tornPagesRedeemed
+                ItemsReceived[item.Name] = math.max(0, math.min(TornPagesReceived - tornPagesRedeemed, 255))
             end
-            ItemsReceived[item.Name] = math.max(0, math.min(TornPagesReceived - tornPagesRedeemed, 255))
-        end
-        if receivedAmount > 0 then
-            ItemHandler:GiveItem(item, true)
-        else
-            if not item.Bitmask then
-                WriteByte(Save + item.Address, 0)
+            if receivedAmount > 0 then
+                ItemHandler:GiveItem(item, true)
+            else
+                if not item.Bitmask then
+                    WriteByte(Save + item.Address, 0)
+                end
             end
-        end
-        VerifyIndex = VerifyIndex + 1
-        if VerifyIndex > #Items then
-            VerifyIndex = 14 --Skip ansem reports since they currently dont do anything
-        end
-    end
-    local growth = GrowthOrder[VerifyIndexGrowth]
-    local isReceived = SoraGrowthReceived[growth]
-    if isReceived.Max - isReceived.Current < 4 then
-        --Sora growth 1 per frame
-        if growth then
-            local equipped = ReadShort(Save + GrowthSlots[growth]) & 0x8000
-            WriteShort(Save + GrowthSlots[growth], SoraGrowthReceived[growth].Current | equipped)
-            VerifyIndexGrowth = VerifyIndexGrowth + 1
-            if VerifyIndexGrowth > #GrowthOrder then
-                VerifyIndexGrowth = 1
+            VerifyIndex = VerifyIndex + 1
+            if VerifyIndex > #Items then
+                VerifyIndex = 14 --Skip ansem reports since they currently dont do anything
             end
         end
-    else
-        VerifyIndexGrowth = VerifyIndexGrowth + 1
-        if VerifyIndexGrowth > #GrowthOrder then
-            VerifyIndexGrowth = 1
-        end
-    end
-    for _, characterIndex in pairs(AbilityData) do
+     VerifyGrowth()
+     for _, characterIndex in pairs(AbilityData) do
         if #characterIndex.AbilitiesReceived > 0 then
-            for i = 1, ItemsPerFrame do
-                local ability = characterIndex.AbilitiesReceived[characterIndex.VerifyIndex]
-                local slot = characterIndex.BackSlot - (characterIndex.VerifyIndex - 1) * 2
-                if ability and slot > characterIndex.FrontSlot then
-                    local equipped = ReadShort(Save + slot) & 0x8000
-                    WriteShort(Save + slot, ability.Address | equipped)
-                end
-                characterIndex.VerifyIndex = characterIndex.VerifyIndex + 1
-                if characterIndex.VerifyIndex > #characterIndex.AbilitiesReceived then
-                    characterIndex.VerifyIndex = 1
-                end
-            end
+            VerifyAbilityCharacter(characterIndex)
         end
-    end
+     end
 end
 
 return ItemHandler

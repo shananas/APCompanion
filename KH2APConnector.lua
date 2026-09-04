@@ -13,9 +13,9 @@ SoraAbilitiesReceived = {}
 DonaldAbilitiesReceived = {}
 GoofyAbilitiesReceived = {}
 local socket = require("socket")
-local ItemHandler = require("KH2.ItemHandler")
 local ItemDefs = require("KH2.ItemDefs")
 local LocationDefs = require("KH2.LocationDefs")
+local ItemHandler = require("KH2.ItemHandler")
 local LocationHandler = require("KH2.LocationHandler")
 local RoomSaveTask = require("KH2.RoomSaveTask")
 
