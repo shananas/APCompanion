@@ -440,7 +440,11 @@ end
 
 --This function is needed for room save to work
 function SendToInv(item)
-    ItemHandler:Receive(item)
+	if item.Type ~= "Magic" then
+		ItemHandler:Receive(item)
+	else
+		table.insert(ItemQueue, item)
+	end
 end
 
 function StoreChest(item)
