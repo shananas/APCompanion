@@ -86,6 +86,7 @@ ItemsReceived = {
 }
 TornPagesReceived = 0
 ItemQueue = {}
+MagicRestoreQueue = {}
 
 --Locations
 Worlds = {}
@@ -333,6 +334,19 @@ function ProcessItemQueue()
 	end
 end
 
+function ProcessMagicRestoreQueue()
+	while #MagicRestoreQueue > 0 do
+		local item = MagicRestoreQueue[1]
+		if ReadByte(Pause) == 0  and ReadByte(FadeStatus) == 0 and ReadByte(Cntrl) == 0 and
+		ReadLong(PlayerGaugePointer) ~= 0 and ReadLong(ReadLong(PlayerGaugePointer)+0x88, true) ~= 0 then
+			ItemHandler:Receive(item)
+			table.remove(MagicRestoreQueue,1)
+		else
+			break
+		end
+	end
+end
+
 -- ############################################################
 -- ######################  Helpers  ###########################
 -- ############################################################
@@ -443,7 +457,7 @@ function SendToInv(item)
 	if item.Type ~= "Magic" then
 		ItemHandler:Receive(item)
 	else
-		table.insert(ItemQueue, item)
+		table.insert(MagicRestoreQueue, item)
 	end
 end
 
@@ -689,6 +703,7 @@ function _OnFrame()
 				LocationHandler:CheckWorldLocations()
 				APCommunication()
 				ProcessItemQueue()
+				ProcessMagicRestoreQueue()
 			end
 			if (FrameCount % HalfSecond) == 0 then
 				ProcessNotification()
