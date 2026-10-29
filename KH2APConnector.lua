@@ -109,6 +109,7 @@ FormWeaponAbilities = {}
 
 LocationsChecked = {}
 ChestsOpenedList = {}
+LocationsConfirmed = {}
 
 MaxSoraLevel = { Value = 1 }
 MaxValorLevel = { Value = 1 }
@@ -233,6 +234,13 @@ function HandleMessage(msg)
 		RoomSaveTask:StoreItem({ID = 593, Name = "Proof of Connection", Type = "Progression", Address = 0x36B2})
 		RoomSaveTask:StoreItem({ID = 594, Name = "Proof of Nonexistence", Type = "Progression", Address = 0x36B3})
 		RoomSaveTask:StoreItem({ID = 595, Name = "Proof of Peace", Type = "Progression", Address = 0x36B4})
+
+	elseif msg.msgType == MessageTypes.WorldLocationChecked then
+		for i = #LocationsConfirmed, 1, -1 do
+			if LocationsConfirmed[i] == tonumber(msg.values[1]) then
+				table.remove(LocationsConfirmed, i)
+			end
+		end
 
 	end
 end
@@ -707,6 +715,7 @@ function _OnFrame()
 			end
 			if (FrameCount % HalfSecond) == 0 then
 				ProcessNotification()
+				LocationHandler:LocationsConfirmed()
 			end
 			if DeathlinkEnabled then
 				Deathlink()

@@ -8,6 +8,7 @@ function LocationHandler:CheckWorldLocations()
             if not LocationsChecked[locationID] and not ChestsOpenedList[locationID] then
                 if (ReadByte(Save + check.Address) & (0x1 << check.BitIndex)) > 0 then
                     LocationsChecked[locationID] = true
+                    table.insert(LocationsConfirmed, locationID)
                     if check.Chest then
                         StoreChest(check)
                     end
@@ -72,6 +73,13 @@ function LocationHandler:CheckChests()
                 end
             end
         end
+    end
+end
+
+function LocationHandler:LocationsConfirmed()
+    for i = 1, #LocationsConfirmed do
+        ConsolePrint(#LocationsConfirmed)
+        SendToApClient(MessageTypes.WorldLocationChecked, {LocationsConfirmed[i]})
     end
 end
 
