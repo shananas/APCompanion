@@ -78,7 +78,6 @@ end
 
 function LocationHandler:LocationsConfirmed()
     for i = 1, #LocationsConfirmed do
-        ConsolePrint(#LocationsConfirmed)
         SendToApClient(MessageTypes.WorldLocationChecked, {LocationsConfirmed[i]})
     end
 end
